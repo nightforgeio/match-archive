@@ -1,0 +1,521 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, viewport-fit=cover"
+    />
+    <title>
+      NightForge — Match Archive | CS, BR &amp; LW Tournament History
+    </title>
+    <meta
+      name="description"
+      content="Complete match history for NightForge — every Counter-Strike, Battle Royale and Lucky Wheel tournament and scrim, with dates, scores, entry fees and prize money. Delhi, India."
+    />
+    <meta name="theme-color" content="#08090c" />
+    <meta name="author" content="NightForge" />
+    <link
+      rel="canonical"
+      href="https://nightforgeio.github.io/match-archive/"
+    />
+
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="NightForge" />
+    <meta property="og:title" content="NightForge — Match Archive" />
+    <meta
+      property="og:description"
+      content="Every match, every entry fee, every prize. The complete CS, BR and LW tournament and scrim record."
+    />
+    <meta
+      property="og:url"
+      content="https://nightforgeio.github.io/match-archive/"
+    />
+    <meta
+      property="og:image"
+      content="https://nightforgeio.github.io/match-archive/assets/og-image.png"
+    />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="NightForge — Match Archive" />
+    <meta
+      name="twitter:description"
+      content="Every match, every entry fee, every prize. The complete CS, BR and LW tournament and scrim record."
+    />
+    <meta
+      name="twitter:image"
+      content="https://nightforgeio.github.io/match-archive/assets/og-image.png"
+    />
+
+    <link rel="icon" href="assets/favicon.svg" type="image/svg+xml" />
+    <link rel="apple-touch-icon" href="assets/icon-192.png" />
+    <link rel="manifest" href="manifest.json" />
+
+    <link
+      rel="preload"
+      href="fonts/space-grotesk-var.woff2"
+      as="font"
+      type="font/woff2"
+      crossorigin
+    />
+    <link rel="stylesheet" href="css/style.css" />
+
+    <!-- Mark the document as scripted BEFORE the stylesheet renders, so
+         content hidden by the reveal animation can never be trapped in a
+         hidden state when JavaScript fails to load. -->
+    <script>
+      document.documentElement.classList.add("js");
+    </script>
+  </head>
+  <body>
+    <a class="skip-link" href="#archive" data-i18n="navArchive">Archive</a>
+
+    <div class="progress" id="progress" aria-hidden="true"></div>
+
+    <header class="header">
+      <div class="wrap header__inner">
+        <a class="brand" href="#top">
+          <span class="brand__mark" id="brandMark" aria-hidden="true">NF</span>
+          <span class="brand__name" id="brandName">NightForge</span>
+        </a>
+
+        <button
+          class="nav-toggle"
+          id="navToggle"
+          type="button"
+          aria-expanded="false"
+          aria-controls="nav"
+          aria-label="Open menu"
+          data-i18n-aria="menuOpen"
+        >
+          <span class="nav-toggle__bars" aria-hidden="true"
+            ><span></span><span></span><span></span
+          ></span>
+        </button>
+
+        <nav class="nav" id="nav" data-i18n-aria="mainNavLabel">
+          <a class="nav__link" href="#archive" data-i18n="navArchive"
+            >Archive</a
+          >
+          <a class="nav__link" href="#stats" data-i18n="navStats">Stats</a>
+          <a class="nav__link" href="#team" data-i18n="navTeam">Team</a>
+          <a class="nav__link" href="#contact" data-i18n="navContact"
+            >Contact</a
+          >
+          <button
+            class="lang-toggle"
+            id="langToggle"
+            type="button"
+            data-lang-toggle
+            aria-pressed="false"
+          >
+            हिंदी
+          </button>
+        </nav>
+      </div>
+    </header>
+
+    <main id="top">
+      <!-- ================= HERO ================= -->
+      <section class="hero" id="home">
+        <div class="wrap">
+          <span class="kicker rv" data-i18n="heroKicker">Match archive</span>
+          <h1 class="hero__title rv">
+            <span data-i18n-html="heroTitle"
+              >Every match. Every entry fee.
+              <span class="hl">Every prize.</span></span
+            >
+          </h1>
+          <p class="hero__sub rv" data-i18n="heroSub">
+            The complete record of our CS, BR and LW tournament and scrim run.
+          </p>
+
+          <div class="hero__actions rv">
+            <a
+              class="btn btn--primary"
+              href="#archive"
+              data-i18n="heroCtaPrimary"
+            >
+              Browse the archive
+            </a>
+            <a class="btn btn--ghost" href="#team" data-i18n="heroCtaSecondary">
+              Team and contact
+            </a>
+          </div>
+
+          <div class="stats rv">
+            <div class="stat">
+              <span class="stat__label" data-i18n="heroStatMatches"
+                >Matches played</span
+              >
+              <span class="stat__value stat__value--accent" id="heroMatches"
+                >—</span
+              >
+            </div>
+            <div class="stat">
+              <span class="stat__label" data-i18n="heroStatWins">Wins</span>
+              <span class="stat__value" id="heroWins">—</span>
+            </div>
+            <div class="stat">
+              <span class="stat__label" data-i18n="heroStatPrize"
+                >Prize won</span
+              >
+              <span class="stat__value" id="heroPrize">—</span>
+            </div>
+            <div class="stat">
+              <span class="stat__label" data-i18n="heroStatWinRate"
+                >Win rate</span
+              >
+              <span class="stat__value" id="heroWinRate">—</span>
+            </div>
+          </div>
+
+          <div class="form-strip rv">
+            <span class="form-strip__label" data-i18n="formLabel"
+              >Recent form</span
+            >
+            <div class="form-strip__row" id="formRow"></div>
+          </div>
+
+          <div class="demo-banner rv" id="demoBanner" hidden>
+            <svg
+              class="demo-banner__icon"
+              width="20"
+              height="20"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              aria-hidden="true"
+            >
+              <circle cx="12" cy="12" r="10"></circle>
+              <path d="M12 16v-4M12 8h.01"></path>
+            </svg>
+            <span data-i18n="demoBanner">
+              These are sample records, so you can see how the archive works.
+            </span>
+          </div>
+        </div>
+      </section>
+
+      <!-- ================= ARCHIVE ================= -->
+      <section class="section" id="archive">
+        <div class="wrap">
+          <span class="kicker rv" data-i18n="archiveKicker">Archive</span>
+          <h2 class="h-section rv" data-i18n="archiveTitle">
+            The full match log
+          </h2>
+          <p class="lead rv" data-i18n="archiveSub">
+            Filter by mode, event type or year. Search by opponent, event or
+            map.
+          </p>
+
+          <div class="filters rv">
+            <div class="filters__row">
+              <span class="filters__label" data-i18n="filterMode">Mode</span>
+              <div
+                class="chips"
+                id="chipMode"
+                role="group"
+                data-i18n-aria="filterByMode"
+              ></div>
+            </div>
+            <div class="filters__row">
+              <span class="filters__label" data-i18n="filterEvent">Event</span>
+              <div
+                class="chips"
+                id="chipEvent"
+                role="group"
+                data-i18n-aria="filterByEvent"
+              ></div>
+            </div>
+            <div class="filters__row">
+              <span class="filters__label" data-i18n="filterResult"
+                >Result</span
+              >
+              <div
+                class="chips"
+                id="chipResult"
+                role="group"
+                data-i18n-aria="filterByResult"
+              ></div>
+            </div>
+            <div class="filters__row">
+              <span class="filters__label" data-i18n="filterYear">Year</span>
+              <div
+                class="chips"
+                id="chipYear"
+                role="group"
+                data-i18n-aria="filterByYear"
+              ></div>
+              <div class="search">
+                <label
+                  class="visually-hidden"
+                  for="searchInput"
+                  data-i18n="searchLabel"
+                >
+                  Search the match archive
+                </label>
+                <input
+                  class="search__input"
+                  id="searchInput"
+                  type="search"
+                  autocomplete="off"
+                  data-i18n-placeholder="searchPlaceholder"
+                  placeholder="Search opponent, event or map"
+                />
+              </div>
+              <button
+                class="filters__reset"
+                id="resetBtn"
+                type="button"
+                data-i18n="resetFilters"
+              >
+                Reset filters
+              </button>
+              <span
+                class="filters__count"
+                id="resultCount"
+                role="status"
+                aria-live="polite"
+              ></span>
+            </div>
+          </div>
+
+          <div class="skeleton" id="skeleton" aria-hidden="true">
+            <div class="skeleton__card"></div>
+            <div class="skeleton__card"></div>
+            <div class="skeleton__card"></div>
+            <div class="skeleton__card"></div>
+          </div>
+
+          <div class="matches" id="matchList"></div>
+
+          <div class="state" id="emptyState" hidden>
+            <h3 class="state__title" data-i18n="emptyTitle">
+              No matches match those filters
+            </h3>
+            <p class="state__body" data-i18n="emptyBody">
+              Try widening the filters, or clear the search box.
+            </p>
+            <button
+              class="btn btn--ghost"
+              type="button"
+              id="resetBtnEmpty"
+              data-i18n="resetFilters"
+            >
+              Reset filters
+            </button>
+          </div>
+
+          <div class="state" id="errorState" hidden>
+            <h3 class="state__title" data-i18n="loadError">
+              Could not load the match archive
+            </h3>
+            <p class="state__body" data-i18n="loadErrorHint">
+              The data file could not be read. Check your connection and reload.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <!-- ================= STATS ================= -->
+      <section class="section" id="stats">
+        <div class="wrap">
+          <span class="kicker rv" data-i18n="statsKicker">Record</span>
+          <h2 class="h-section rv" data-i18n="statsTitle">
+            The numbers behind the record
+          </h2>
+          <p class="lead rv" data-i18n="statsSub">
+            Win rate, prize money and event breakdown across every match.
+          </p>
+
+          <div class="stats rv" id="statsGrid"></div>
+
+          <div class="breakdowns">
+            <div class="breakdown rv">
+              <h3 class="breakdown__title" data-i18n="breakdownTitle">
+                By mode
+              </h3>
+              <div id="breakdownModes"></div>
+            </div>
+            <div class="breakdown rv">
+              <h3 class="breakdown__title" data-i18n="breakdownEventTitle">
+                By event type
+              </h3>
+              <div id="breakdownEvents"></div>
+            </div>
+          </div>
+
+          <p class="state__body rv" data-i18n="statNetNote">
+            Prize money minus entry fees across all listed matches.
+          </p>
+        </div>
+      </section>
+
+      <!-- ================= TEAM + CONTACT ================= -->
+      <section class="section" id="team">
+        <div class="wrap">
+          <span class="kicker rv" data-i18n="teamKicker">Team</span>
+          <h2 class="h-section rv" data-i18n="teamTitle">About the roster</h2>
+
+          <div class="about rv">
+            <div>
+              <p class="about__body" id="teamAbout"></p>
+              <p class="about__body" id="teamTagline"></p>
+            </div>
+
+            <div class="facts">
+              <div class="fact">
+                <span class="fact__label" data-i18n="teamFactBased"
+                  >Based in</span
+                >
+                <span class="fact__value" id="factCity">—</span>
+              </div>
+              <div class="fact">
+                <span class="fact__label" data-i18n="teamFactEmail">Email</span>
+                <a class="fact__value" id="factEmail" href="#">—</a>
+              </div>
+              <div class="fact">
+                <span class="fact__label" data-i18n="teamFactWhatsapp"
+                  >WhatsApp</span
+                >
+                <a class="fact__value" id="factWhatsapp" href="#">—</a>
+              </div>
+              <div class="fact">
+                <span class="fact__label" data-i18n="teamFactInstagram"
+                  >Instagram</span
+                >
+                <a class="fact__value" id="factInstagram" href="#">—</a>
+              </div>
+              <div class="fact">
+                <span class="fact__label" data-i18n="teamFactYouTube"
+                  >YouTube</span
+                >
+                <a class="fact__value" id="factYoutube" href="#">—</a>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="section section--flush" id="contact">
+        <div class="wrap">
+          <span class="kicker rv" data-i18n="navContact">Contact</span>
+          <h2 class="h-section rv" data-i18n="contactTitle">Get in touch</h2>
+          <p class="lead rv" data-i18n="contactSub">
+            Sponsorship, scrims, or a match to challenge. Send a message and we
+            will reply.
+          </p>
+
+          <div class="contact rv">
+            <a class="contact__item" id="contactWhatsapp" href="#">
+              <svg
+                width="18"
+                height="18"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                aria-hidden="true"
+              >
+                <path
+                  d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"
+                ></path>
+              </svg>
+              <span data-i18n="contactWhatsapp">WhatsApp us</span>
+            </a>
+            <a class="contact__item" id="contactEmail" href="#">
+              <svg
+                width="18"
+                height="18"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                aria-hidden="true"
+              >
+                <rect x="2" y="4" width="20" height="16" rx="2"></rect>
+                <path d="m22 7-10 6L2 7"></path>
+              </svg>
+              <span data-i18n="contactEmail">Email us</span>
+            </a>
+            <button
+              class="contact__item"
+              id="copyEmail"
+              type="button"
+              data-i18n="contactCopy"
+            >
+              Copy email
+            </button>
+            <button
+              class="contact__item"
+              id="shareBtn"
+              type="button"
+              data-i18n="contactShare"
+            >
+              Share archive
+            </button>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <footer class="footer">
+      <div class="wrap footer__inner">
+        <div>
+          <p class="footer__note" data-i18n="footerNote">
+            Match records are added and maintained by the team.
+          </p>
+          <p class="footer__note">
+            © <span id="footerYear">2026</span>
+            <span id="heroTeamName">NightForge</span>.
+            <span data-i18n="footerRights">All rights reserved.</span>
+          </p>
+        </div>
+        <div class="footer__links">
+          <a class="footer__link" href="#archive" data-i18n="navArchive"
+            >Archive</a
+          >
+          <a class="footer__link" href="#stats" data-i18n="navStats">Stats</a>
+          <a class="footer__link" href="#contact" data-i18n="navContact"
+            >Contact</a
+          >
+          <a class="footer__link" href="admin/" data-i18n="footerAdmin"
+            >Admin</a
+          >
+          <a class="footer__link" href="#top" data-i18n="footerTop"
+            >Back to top</a
+          >
+        </div>
+      </div>
+    </footer>
+
+    <script src="js/i18n.js"></script>
+    <script src="js/data.js"></script>
+    <script src="js/app.js"></script>
+    <script>
+      // Register the service worker. It must be REGISTERED, never loaded
+      // as a page script — in a page context `self` is `window`, and the
+      // worker's fetch handler would then intercept and break every
+      // request the page makes.
+      (function () {
+        "use strict";
+        if (!("serviceWorker" in navigator)) return;
+        // A file:// preview has no service worker, and the API throws.
+        if (location.protocol !== "http:" && location.protocol !== "https:")
+          return;
+        window.addEventListener("load", function () {
+          navigator.serviceWorker.register("sw.js").catch(function () {
+            // Offline support is a bonus, not a requirement. A failed
+            // registration must never break the archive.
+          });
+        });
+      })();
+    </script>
+  </body>
+</html>

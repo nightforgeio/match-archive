@@ -1,0 +1,11 @@
+# Machine-only / editor noise
+node_modules/
+.DS_Store
+*.log
+Thumbs.db
+
+# Local credentials and keys — never commit these
+.deploy.env.local
+*.pem
+*.key
+*.p12

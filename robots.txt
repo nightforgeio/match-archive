@@ -1,0 +1,11 @@
+User-agent: *
+Allow: /
+
+# The admin panel is for the owner only — keep it out of search results.
+Disallow: /admin/
+
+# The data files are the public source of truth, but there is no reason
+# for a crawler to index the raw JSON.
+Disallow: /scripts/
+
+Sitemap: https://nightforgeio.github.io/match-archive/sitemap.xml

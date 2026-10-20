@@ -320,6 +320,8 @@ ul {
   display: flex;
   align-items: center;
   gap: var(--space-sm);
+  min-height: 44px;
+  min-width: 44px;
   color: var(--fg);
   font-weight: 700;
   letter-spacing: -0.02em;
@@ -400,7 +402,12 @@ ul {
   position: relative;
   display: flex;
   align-items: center;
+  justify-content: center;
   min-height: 44px;
+  /* A text link can be narrower than 44px ("Stats" is 38px). The target
+     has to clear 44x44, so the box is widened and the text centred in
+     it rather than leaving a small tap target. */
+  min-width: 44px;
   padding: 6px 0;
   color: var(--fg-2);
   font-size: 0.92rem;
@@ -1021,9 +1028,21 @@ ul {
 }
 
 .fact__value {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  min-width: 44px;
   font-family: var(--font-m);
   font-size: 0.95rem;
   overflow-wrap: anywhere;
+}
+
+/* A value that is not set is a plain value, not a control. It keeps the
+   44px row height so the block stays aligned with the set values. */
+.fact__value[data-not-set] {
+  color: var(--muted);
+  cursor: default;
+  text-decoration: none;
 }
 
 /* --- Contact -------------------------------------------------------------- */
@@ -1091,7 +1110,11 @@ ul {
 .footer__link {
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   min-height: 44px;
+  /* Same reason as .nav__link: a short label like "Admin" is 42px wide,
+     which is under the 44px minimum target. */
+  min-width: 44px;
   color: var(--fg-2);
   font-size: 0.88rem;
 }

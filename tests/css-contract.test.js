@@ -48,6 +48,20 @@ function tapTargetPx(source, selector) {
   return null;
 }
 
+// The width of a text link is decided by its label, so a min-height alone
+// does not make the target 44x44. A rule also has to declare a min-width,
+// or an explicit width, of at least 44px.
+function minWidthPx(source, selector) {
+  const body = ruleBody(source, selector);
+  if (!body) return null;
+  const mw = /min-width:\s*([0-9.]+)(px|rem)/.exec(body);
+  const w = /(?<!-)width:\s*([0-9.]+)(px|rem)/.exec(body);
+  const toPx = (m) => (m[2] === "rem" ? parseFloat(m[1]) * 16 : parseFloat(m[1]));
+  if (mw) return toPx(mw);
+  if (w) return toPx(w);
+  return null;
+}
+
 // The min-height may live in a grouped selector, e.g.
 //   .field input,
 //   .field select,
@@ -86,7 +100,9 @@ const TAP_RULES = [
   { sel: ".contact__item", label: "contact action" },
   { sel: ".footer__link", label: "footer link" },
   { sel: ".nav__link", label: "nav link" },
-  { sel: ".nav-toggle", label: "mobile burger" }
+  { sel: ".nav-toggle", label: "mobile burger" },
+  { sel: ".brand", label: "brand link" },
+  { sel: ".fact__value", label: "team fact value" }
 ];
 for (const rule of TAP_RULES) {
   const px = tapTargetPx(css, rule.sel);
@@ -94,6 +110,18 @@ for (const rule of TAP_RULES) {
     rule.label + " has a >=44px tap target",
     px !== null && px >= 44,
     px === null ? rule.sel + " has no size" : px + "px"
+  );
+}
+
+// A text link's width comes from its label, so the height check alone is
+// not enough. These rules must also declare a >=44px minimum width.
+console.log("\n=== TAP TARGET WIDTHS ===");
+for (const sel of [".nav__link", ".footer__link", ".brand", ".fact__value"]) {
+  const w = minWidthPx(css, sel);
+  ok(
+    sel + " declares a >=44px minimum width",
+    w !== null && w >= 44,
+    w === null ? sel + " has no width" : w + "px"
   );
 }
 

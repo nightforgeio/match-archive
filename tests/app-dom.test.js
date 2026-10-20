@@ -387,6 +387,27 @@ function makeWindow(opts) {
   );
   ok("the footer year is the current year", T("footerYear") === String(new Date().getFullYear()), T("footerYear"));
 
+  // A team value that is not set must not stay a live link. Leaving
+  // href="#" behind makes "Not set" a dead control: focusable, styled
+  // like a link, and clicking it jumps the page to the top.
+  {
+    const unset = doc.getElementById("factInstagram");
+    ok(
+      "an unset social link has no href",
+      !unset.getAttribute("href"),
+      unset.getAttribute("href")
+    );
+    ok("an unset social link is marked as not set", unset.getAttribute("data-not-set") === "true");
+    ok("an unset social link is announced as disabled", unset.getAttribute("aria-disabled") === "true");
+    ok("an unset social link shows the not-set text", unset.textContent.trim() === "Not set", unset.textContent);
+
+    // A value that IS set must still be a working link.
+    const email = doc.getElementById("factEmail");
+    ok("a set email link keeps its mailto href", email.getAttribute("href") === "mailto:" + teamData.email);
+    ok("a set email link is not marked as not set", !email.getAttribute("data-not-set"));
+    ok("a set email link is not disabled", !email.getAttribute("aria-disabled"));
+  }
+
   // =========================================================================
   console.log("\n=== NO-JS FALLBACK ===");
   {

@@ -363,14 +363,21 @@
     function setFact(id, value, href, isLink) {
       const node = $(id);
       if (!node) return;
+      // A value that is not set must not stay a link. Leaving href="#"
+      // behind makes "Not set" a dead control: it is focusable, it looks
+      // clickable, and activating it jumps the page to the top.
       if (!value) {
         node.textContent = t("notSet");
+        node.removeAttribute("href");
+        node.setAttribute("aria-disabled", "true");
+        node.setAttribute("data-not-set", "true");
         return;
       }
+      node.removeAttribute("aria-disabled");
+      node.removeAttribute("data-not-set");
       if (isLink && href) {
         node.textContent = value;
         node.setAttribute("href", href);
-        node.removeAttribute("data-no-link");
       } else {
         node.textContent = value;
         node.removeAttribute("href");

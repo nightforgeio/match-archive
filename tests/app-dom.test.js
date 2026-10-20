@@ -326,6 +326,21 @@ function makeWindow(opts) {
   ok("no stray backslash before Devanagari", !/\\[ऀ-ॿ]/.test(doc.body.textContent));
   ok("no doubled Devanagari characters", !/([ऀ-ॿ])\1/.test(doc.body.textContent));
 
+  // The team description is owner-supplied copy, so the Hindi view needs
+  // a Hindi variant of it. data/team.json carries one, and it must be
+  // the version the Hindi page shows.
+  ok(
+    "the Hindi view shows the Hindi team description",
+    T("teamAbout") === teamData.aboutHi,
+    T("teamAbout")
+  );
+  ok(
+    "the Hindi view shows the Hindi tagline",
+    T("teamTagline") === teamData.taglineHi,
+    T("teamTagline")
+  );
+  ok("the Hindi team description is in Devanagari", /[ऀ-ॿ]/.test(T("teamAbout")));
+
   click(toggle);
   await settle();
   ok("toggling back restores English", doc.documentElement.lang === "en");
@@ -371,6 +386,26 @@ function makeWindow(opts) {
   ok("the team name is rendered", T("brandName") === teamData.name, T("brandName"));
   ok("the team about text is rendered", T("teamAbout").length > 10);
   ok("the city is rendered", T("factCity") === teamData.city, T("factCity"));
+
+  // The team copy is owner-supplied, so the Hindi view needs a Hindi
+  // variant of it. When data/team.json carries one, the Hindi page must
+  // show it — not the English text.
+  {
+    const hasHi = typeof teamData.aboutHi === "string" && teamData.aboutHi.length > 0;
+    const hasTaglineHi = typeof teamData.taglineHi === "string" && teamData.taglineHi.length > 0;
+    ok("the team data carries a Hindi description", hasHi);
+    ok("the team data carries a Hindi tagline", hasTaglineHi);
+    ok(
+      "the English view shows the English description",
+      T("teamAbout") === teamData.about,
+      T("teamAbout")
+    );
+    ok(
+      "the English view shows the English tagline",
+      T("teamTagline") === teamData.tagline,
+      T("teamTagline")
+    );
+  }
   ok("the email is a mailto link", doc.getElementById("factEmail").getAttribute("href") === "mailto:" + teamData.email);
   ok(
     "the whatsapp link is a wa.me link",

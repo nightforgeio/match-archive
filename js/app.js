@@ -356,9 +356,17 @@
     if (el.brandName) el.brandName.textContent = team.name;
     if (el.brandMark) el.brandMark.textContent = team.logoText || "NF";
     if (el.heroTeamName) el.heroTeamName.textContent = team.name;
-    if (el.teamAbout)
-      el.teamAbout.textContent = team.about || team.tagline || "";
-    if (el.teamTagline) el.teamTagline.textContent = team.tagline || "";
+
+    // The owner can supply a Hindi tagline and description. When they are
+    // present the Hindi view uses them; otherwise the English text stays,
+    // which is better than showing an empty panel.
+    const hi = lang() === "hi";
+    const aboutText = hi ? team.aboutHi || team.about || "" : team.about || "";
+    const taglineText = hi
+      ? team.taglineHi || team.tagline || ""
+      : team.tagline || "";
+    if (el.teamAbout) el.teamAbout.textContent = aboutText;
+    if (el.teamTagline) el.teamTagline.textContent = taglineText;
 
     function setFact(id, value, href, isLink) {
       const node = $(id);

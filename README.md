@@ -31,6 +31,11 @@ Two files carry the record:
 | `data/matches.json`  | The match log — the schema, the ordered records     |
 | `data/team.json`     | Team name, tagline, city, email, WhatsApp, socials  |
 
+`data/team.json` also carries optional `taglineHi` and `aboutHi` strings.
+When they are present the Hindi view of the page shows them; when they are
+absent the English text is shown in both views. The admin panel has a field
+for each.
+
 ### Match record shape
 
 ```json

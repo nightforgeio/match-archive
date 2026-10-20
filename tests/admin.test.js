@@ -303,10 +303,22 @@ const submit = (w, node) =>
     doc.getElementById("teamCity").value = "Mumbai, India";
     doc.getElementById("teamEmail").value = "team@example.com";
     doc.getElementById("teamWhatsapp").value = "919876543210";
+    doc.getElementById("teamTaglineHi").value = "CS, BR और LW टीम";
+    doc.getElementById("teamAboutHi").value = "यह पूरा मैच रिकॉर्ड है।";
     submit(w, doc.getElementById("teamForm"));
     await settle();
     ok("the team details are saved", /Team details saved/.test(doc.getElementById("status").textContent), doc.getElementById("status").textContent);
     ok("the team draft is in localStorage", (String(w.localStorage.getItem("nf_admin_team")).indexOf("NightForge XI") !== -1));
+    // The Hindi team copy is optional, but when it is supplied it has to
+    // survive the save so the public page can show it in the Hindi view.
+    ok("the Hindi tagline is saved", (function () {
+      const parsed = JSON.parse(w.localStorage.getItem("nf_admin_team"));
+      return parsed.taglineHi === "CS, BR और LW टीम";
+    })());
+    ok("the Hindi about text is saved", (function () {
+      const parsed = JSON.parse(w.localStorage.getItem("nf_admin_team"));
+      return parsed.aboutHi === "यह पूरा मैच रिकॉर्ड है।";
+    })());
     ok("the logo text is derived from the name", (function () {
       const parsed = JSON.parse(w.localStorage.getItem("nf_admin_team"));
       return parsed.logoText === "NI";

@@ -393,7 +393,9 @@
     if (!el.teamForm) return;
     el.teamName.value = team.name || "";
     el.teamTagline.value = team.tagline || "";
+    el.teamTaglineHi.value = team.taglineHi || "";
     el.teamAbout.value = team.about || "";
+    el.teamAboutHi.value = team.aboutHi || "";
     el.teamCity.value = team.city || "";
     el.teamEmail.value = team.email || "";
     el.teamWhatsapp.value = team.whatsapp || "";
@@ -796,7 +798,9 @@
         schemaVersion: 1,
         name: el.teamName.value.trim(),
         tagline: el.teamTagline.value.trim(),
+        taglineHi: el.teamTaglineHi.value.trim(),
         about: el.teamAbout.value.trim(),
+        aboutHi: el.teamAboutHi.value.trim(),
         city: el.teamCity.value.trim(),
         email: el.teamEmail.value.trim(),
         whatsapp: el.teamWhatsapp.value.trim(),
@@ -884,7 +888,9 @@
     el.teamForm = $("teamForm");
     el.teamName = $("teamName");
     el.teamTagline = $("teamTagline");
+    el.teamTaglineHi = $("teamTaglineHi");
     el.teamAbout = $("teamAbout");
+    el.teamAboutHi = $("teamAboutHi");
     el.teamCity = $("teamCity");
     el.teamEmail = $("teamEmail");
     el.teamWhatsapp = $("teamWhatsapp");

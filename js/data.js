@@ -7,12 +7,12 @@
 // A match record:
 //   id          string   stable unique id (used as the DOM key)
 //   date        string   "YYYY-MM-DD"
-//   mode        string   "CS" | "BR" | "LW"
+//   mode        string   "CS" | "BR" | "LW"  (see MODE_LABELS below)
 //   event       string   "Tournament" | "Scrim" | "Qualifier" | "Showmatch" | "Other"
 //   eventName   string   the tournament's actual name
 //   map         string   map / arena played
 //   opponent    string   who we played
-//   score       string   free text, shown as written ("13-7", "1st - #4")
+//   score       string   free text, shown as written ("3-1", "1st - #4")
 //   result      string   "W" | "L" | "D"
 //   placement   number|null   final standing, null when the format has none
 //   entryFee    number   rupees paid to enter
@@ -33,6 +33,15 @@
   const LOAD_TIMEOUT_MS = 10000;
 
   const MODES = ["CS", "BR", "LW"];
+  // The display name for each mode code. These are the official Free Fire
+  // MAX competitive mode names, so the community never translates them.
+  // They live here, next to MODES, so the public page, the admin panel
+  // and the i18n dictionary all read one source instead of three.
+  const MODE_LABELS = {
+    CS: "Clash Squad",
+    BR: "Battle Royale",
+    LW: "Lone Wolf",
+  };
   const EVENTS = ["Tournament", "Scrim", "Qualifier", "Showmatch", "Other"];
   const RESULTS = ["W", "L", "D"];
 
@@ -40,7 +49,7 @@
   // team.json is unreachable. It is marked as such in the UI.
   const FALLBACK_TEAM = {
     name: "NightForge",
-    tagline: "Competitive CS, BR and LW squad",
+    tagline: "Free Fire MAX competitive roster",
     about: "",
     city: "",
     email: "",
@@ -329,6 +338,7 @@
     formatMoney: formatMoney,
     formatNumber: formatNumber,
     MODES: MODES,
+    MODE_LABELS: MODE_LABELS,
     EVENTS: EVENTS,
     RESULTS: RESULTS,
   };

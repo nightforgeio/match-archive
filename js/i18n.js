@@ -27,10 +27,10 @@
       menuOpen: "Open menu",
       menuClose: "Close menu",
 
-      heroKicker: "Match archive",
+      heroKicker: "Free Fire MAX match archive",
       heroTitle: "Every match. Every entry fee. Every prize.",
       heroSub:
-        "The complete record of our CS, BR and LW tournament and scrim run — filterable, searchable and open for anyone to check.",
+        "The complete record of our Free Fire MAX tournament and scrim run — filterable, searchable and open for anyone to check.",
       heroCtaPrimary: "Browse the archive",
       heroCtaSecondary: "Team and contact",
       heroStatMatches: "Matches played",
@@ -41,7 +41,7 @@
       formLastTen: "Last 10 results",
 
       demoBanner:
-        "These are sample records, so you can see how the archive works. The owner replaces them with the real match log.",
+        "These are sample records, so you can see how the archive works. The owner replaces them with the real Free Fire MAX match log.",
 
       archiveKicker: "Archive",
       archiveTitle: "The full match log",
@@ -64,10 +64,9 @@
       filterByEvent: "Filter by event type",
       filterByResult: "Filter by result",
       filterByYear: "Filter by year",
-
-      modeCs: "CS",
-      modeBr: "BR",
-      modeLw: "LW",
+      modeCs: "Clash Squad",
+      modeBr: "Battle Royale",
+      modeLw: "Lone Wolf",
       eventTournament: "Tournament",
       eventScrim: "Scrim",
       eventQualifier: "Qualifier",
@@ -168,10 +167,10 @@
       menuOpen: "मेन्यू खोलें",
       menuClose: "मेन्यू बंद करें",
 
-      heroKicker: "मैच रिकॉर्ड",
+      heroKicker: "Free Fire MAX मैच रिकॉर्ड",
       heroTitle: "हर मैच। हर एंट्री फीस। हर इनाम।",
       heroSub:
-        "हमारे CS, BR और LW टूर्नामेंट व स्क्रिम का पूरा रिकॉर्ड — फ़िल्टर करने योग्य, खोजने योग्य और किसी के लिए भी खुला।",
+        "हमारे Free Fire MAX टूर्नामेंट व स्क्रिम का पूरा रिकॉर्ड — फ़िल्टर करने योग्य, खोजने योग्य और किसी के लिए भी खुला।",
       heroCtaPrimary: "रिकॉर्ड देखें",
       heroCtaSecondary: "टीम और संपर्क",
       heroStatMatches: "खेले गए मैच",
@@ -182,7 +181,7 @@
       formLastTen: "पिछले 10 नतीजे",
 
       demoBanner:
-        "ये नमूना रिकॉर्ड हैं, ताकि आपको पता चले रिकॉर्ड कैसा दिखता है। असली मैच लॉग इन्हीं की जगह आएगा।",
+        "ये नमूना रिकॉर्ड हैं, ताकि आपको पता चले रिकॉर्ड कैसा दिखता है। असली Free Fire MAX मैच लॉग इन्हीं की जगह आएगा।",
 
       archiveKicker: "रिकॉर्ड",
       archiveTitle: "पूरा मैच लॉग",
@@ -205,10 +204,9 @@
       filterByEvent: "इवेंट प्रकार से फ़िल्टर करें",
       filterByResult: "नतीजे से फ़िल्टर करें",
       filterByYear: "साल से फ़िल्टर करें",
-
-      modeCs: "CS",
-      modeBr: "BR",
-      modeLw: "LW",
+      modeCs: "Clash Squad",
+      modeBr: "Battle Royale",
+      modeLw: "Lone Wolf",
       eventTournament: "टूर्नामेंट",
       eventScrim: "स्क्रिम",
       eventQualifier: "क्वालिफ़ायर",

@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "updatedAt": "2026-03-02T00:00:00+05:30",
+  "updatedAt": "2026-10-20T00:00:00+05:30",
   "matches": [
     {
       "id": "demo-001",
@@ -8,14 +8,14 @@
       "mode": "CS",
       "event": "Tournament",
       "eventName": "NightForge Weekly Cup #12",
-      "map": "Mirage",
+      "map": "Bermuda",
       "opponent": "Team Velocity",
-      "score": "13-7",
+      "score": "3-1",
       "result": "W",
       "placement": 1,
       "entryFee": 500,
       "prize": 10000,
-      "notes": "Demo record. Decided on Mirage, full buy on eco rounds.",
+      "notes": "Sample record. Won the Clash Squad final 3-1 on Bermuda, closing the last round on a clutch.",
       "demo": true
     },
     {
@@ -24,14 +24,14 @@
       "mode": "BR",
       "event": "Tournament",
       "eventName": "NightForge Weekly Cup #11",
-      "map": "Erangel",
+      "map": "Purgatory",
       "opponent": "Squad 7",
       "score": "1st - #4",
       "result": "W",
       "placement": 1,
       "entryFee": 500,
       "prize": 10000,
-      "notes": "Demo record. Chicken dinner in the final circle.",
+      "notes": "Sample record. Booyah in the final circle on Purgatory, four squads left standing.",
       "demo": true
     },
     {
@@ -40,14 +40,14 @@
       "mode": "LW",
       "event": "Scrim",
       "eventName": "Weekly scrim block",
-      "map": "Nuketown",
+      "map": "Kalahari",
       "opponent": "Raven Esports",
       "score": "2-1",
       "result": "W",
       "placement": null,
       "entryFee": 0,
       "prize": 0,
-      "notes": "Demo record. Bo3 win, closed map two.",
+      "notes": "Sample record. Lone Wolf win, 2-1, closed the decider on Kalahari.",
       "demo": true
     },
     {
@@ -56,14 +56,14 @@
       "mode": "CS",
       "event": "Qualifier",
       "eventName": "Coastal Open Qualifier",
-      "map": "Inferno",
+      "map": "Alpine",
       "opponent": "Ironclad",
-      "score": "9-13",
+      "score": "1-2",
       "result": "L",
       "placement": 5,
       "entryFee": 800,
       "prize": 0,
-      "notes": "Demo record. Knocked out in the semi.",
+      "notes": "Sample record. Knocked out in the qualifier semi, 1-2 on Alpine.",
       "demo": true
     },
     {
@@ -72,14 +72,14 @@
       "mode": "BR",
       "event": "Tournament",
       "eventName": "Nightsquad Clash",
-      "map": "Livik",
+      "map": "NeXTerra",
       "opponent": "Void Runners",
       "score": "2nd - #3",
       "result": "W",
       "placement": 2,
       "entryFee": 1000,
       "prize": 6000,
-      "notes": "Demo record. Runner-up position.",
+      "notes": "Sample record. Runner-up position, second squad left standing on NeXTerra.",
       "demo": true
     },
     {
@@ -88,14 +88,14 @@
       "mode": "CS",
       "event": "Scrim",
       "eventName": "Practice block",
-      "map": "Dust II",
+      "map": "Solara",
       "opponent": "Momentum GG",
       "score": "1-2",
       "result": "L",
       "placement": null,
       "entryFee": 0,
       "prize": 0,
-      "notes": "Demo record. Close Bo3.",
+      "notes": "Sample record. Close Clash Squad scrim, 1-2 on Solara.",
       "demo": true
     },
     {
@@ -104,14 +104,14 @@
       "mode": "LW",
       "event": "Tournament",
       "eventName": "New Year Clash",
-      "map": "Firing Range",
+      "map": "Bermuda Remastered",
       "opponent": "Nova Squad",
-      "score": "13-4",
+      "score": "3-0",
       "result": "W",
       "placement": 1,
       "entryFee": 300,
       "prize": 7500,
-      "notes": "Demo record. Dominated the final.",
+      "notes": "Sample record. Straight sweep, 3-0 in the Lone Wolf final.",
       "demo": true
     },
     {
@@ -120,14 +120,14 @@
       "mode": "CS",
       "event": "Tournament",
       "eventName": "Coastal Open",
-      "map": "Ancient",
+      "map": "Bermuda",
       "opponent": "Blue Phoenix",
-      "score": "13-9",
+      "score": "3-2",
       "result": "W",
       "placement": 3,
       "entryFee": 600,
       "prize": 3000,
-      "notes": "Demo record. Third place finish.",
+      "notes": "Sample record. Third place finish, 3-2 in the Clash Squad bracket decider.",
       "demo": true
     }
   ]

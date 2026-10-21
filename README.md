@@ -1,12 +1,10 @@
-# NightForge — Match Archive
-
-A public archive of every NightForge match: date, mode, event, map, opponent,
-score, result, placement, entry fee and prize money. Visitors filter by mode,
-event type, result and year, and search by opponent, event or map.
-
-The owner maintains the records from `/admin/`. The public page always reads
-the committed `data/matches.json`, so an admin edit only goes live after it is
-exported or published.
+# NightForge — Free Fire MAX Match Archive
+A public archive of every NightForge Free Fire MAX match: date, mode, event,
+map, opponent, score, result, placement, entry fee and prize money. Visitors
+filter by mode, event type, result and year, and search by opponent, event or
+map. The owner maintains the records from `/admin/`. The public page always
+reads the committed `data/matches.json`, so an admin edit only goes live after
+it is exported or published.
 
 ---
 
@@ -45,21 +43,32 @@ for each.
   "mode": "CS",
   "event": "Tournament",
   "eventName": "NightForge Weekly Cup #12",
-  "map": "Mirage",
+  "map": "Bermuda",
   "opponent": "Team Velocity",
-  "score": "13-7",
+  "score": "3-1",
   "result": "W",
   "placement": 1,
   "entryFee": 500,
   "prize": 10000,
-  "notes": "Decided on Mirage.",
+  "notes": "Decided on Bermuda.",
   "demo": false
 }
 ```
 
-- `mode` — `CS`, `BR` or `LW`
+- `mode` — `CS`, `BR` or `LW`. The codes are stored, but the site shows the
+  official Free Fire MAX mode name next to them:
+
+  | Code | Mode name      |
+  | ---- | -------------- |
+  | `CS` | Clash Squad    |
+  | `BR` | Battle Royale  |
+  | `LW` | Lone Wolf      |
+
 - `event` — `Tournament`, `Scrim`, `Qualifier`, `Showmatch`, or `Other`
 - `result` — `W`, `L` or `D`
+- `map` — free text, so a seasonal or mode-specific map can be recorded
+  accurately (Bermuda, Bermuda Remastered, Purgatory, Kalahari, Alpine,
+  NeXTerra, Solara)
 - `demo` — `true` marks a sample record. The public page shows a banner
   while any remain, and the admin can remove them all in one action.
 

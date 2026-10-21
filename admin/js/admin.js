@@ -39,6 +39,14 @@
   const TEAM_URL = "../data/team.json";
 
   const MODES = ["CS", "BR", "LW"];
+  // The official Free Fire MAX competitive mode names. The admin shows
+  // these next to the code so the owner picks the right one, and so the
+  // published record never carries a name the community does not use.
+  const MODE_LABELS = {
+    CS: "Clash Squad",
+    BR: "Battle Royale",
+    LW: "Lone Wolf",
+  };
   const EVENTS = ["Tournament", "Scrim", "Qualifier", "Showmatch", "Other"];
   const RESULTS = ["W", "L", "D"];
 
@@ -358,7 +366,7 @@
           esc(m.date || "—") +
           "</span>" +
           '<span class="row__badge">' +
-          esc(m.mode || "—") +
+          esc(m.mode ? m.mode + " — " + (MODE_LABELS[m.mode] || m.mode) : "—") +
           "</span>" +
           '<span class="row__badge">' +
           esc(m.event || "—") +
@@ -919,7 +927,13 @@
     // Populate the mode and event selects from the shared constants, so
     // the admin and the site cannot drift apart.
     el.editMode.innerHTML = MODES.map(function (m) {
-      return '<option value="' + esc(m) + '">' + esc(m) + "</option>";
+      return (
+        '<option value="' +
+        esc(m) +
+        '">' +
+        esc(m + " — " + (MODE_LABELS[m] || m)) +
+        "</option>"
+      );
     }).join("");
     el.editEvent.innerHTML = EVENTS.map(function (e) {
       return '<option value="' + esc(e) + '">' + esc(e) + "</option>";

@@ -135,6 +135,17 @@ const submit = (w, node) =>
   ok("the editor opens", doc.getElementById("editDialog").open === true);
   ok("the dialog title says Add", doc.getElementById("dialogTitle").textContent.trim() === "Add match");
   ok("the mode select is populated", doc.getElementById("editMode").options.length === 3);
+  // The admin must show the official Free Fire MAX mode names, so the
+  // owner cannot publish a record with the wrong vocabulary.
+  ok(
+    "the mode select names the Free Fire MAX modes",
+    Array.from(doc.getElementById("editMode").options)
+      .map((o) => o.textContent)
+      .join("|") === "CS — Clash Squad|BR — Battle Royale|LW — Lone Wolf",
+    Array.from(doc.getElementById("editMode").options)
+      .map((o) => o.textContent)
+      .join("|")
+  );
   ok("the event select is populated", doc.getElementById("editEvent").options.length === 5);
   ok("the result select is populated", doc.getElementById("editResult").options.length === 3);
 
@@ -173,9 +184,9 @@ const submit = (w, node) =>
   doc.getElementById("editMode").value = "BR";
   doc.getElementById("editEvent").value = "Tournament";
   doc.getElementById("editEventName").value = "Test Cup 2026";
-  doc.getElementById("editMap").value = "Mirage";
+  doc.getElementById("editMap").value = "Bermuda";
   doc.getElementById("editOpponent").value = "Test Squad";
-  doc.getElementById("editScore").value = "13-5";
+  doc.getElementById("editScore").value = "3-1";
   doc.getElementById("editResult").value = "W";
   doc.getElementById("editPlacement").value = "2";
   doc.getElementById("editEntryFee").value = "250";
@@ -303,7 +314,7 @@ const submit = (w, node) =>
     doc.getElementById("teamCity").value = "Mumbai, India";
     doc.getElementById("teamEmail").value = "team@example.com";
     doc.getElementById("teamWhatsapp").value = "919876543210";
-    doc.getElementById("teamTaglineHi").value = "CS, BR और LW टीम";
+    doc.getElementById("teamTaglineHi").value = "Free Fire MAX प्रतिस्पर्धा टीम";
     doc.getElementById("teamAboutHi").value = "यह पूरा मैच रिकॉर्ड है।";
     submit(w, doc.getElementById("teamForm"));
     await settle();
@@ -313,7 +324,7 @@ const submit = (w, node) =>
     // survive the save so the public page can show it in the Hindi view.
     ok("the Hindi tagline is saved", (function () {
       const parsed = JSON.parse(w.localStorage.getItem("nf_admin_team"));
-      return parsed.taglineHi === "CS, BR और LW टीम";
+      return parsed.taglineHi === "Free Fire MAX प्रतिस्पर्धा टीम";
     })());
     ok("the Hindi about text is saved", (function () {
       const parsed = JSON.parse(w.localStorage.getItem("nf_admin_team"));

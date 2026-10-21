@@ -108,10 +108,13 @@ test("no hindi string has a doubled Devanagari character", function () {
 });
 
 test("hindi strings contain no latin letters outside allowed terms", function () {
-  // Common English words are fine in Hindi copy (WhatsApp, SEO, CS, BR),
-  // and a brand name is never translated. But a whole English sentence
-  // means the key was never translated at all.
-  const allowed = /\b(WhatsApp|CS|BR|LW|Instagram|YouTube|SEO|NightForge)\b/g;
+  // Common English words are fine in Hindi copy (WhatsApp, SEO, NightForge),
+  // and the game's own names are never translated — "Clash Squad" and
+  // "Free Fire MAX" are proper nouns, so the community calls them that in
+  // every language. A brand name is never translated either. But a whole
+  // English sentence means the key was never translated at all.
+  const allowed =
+    /\b(WhatsApp|Instagram|YouTube|SEO|NightForge|Free|Fire|MAX|Clash|Squad|Battle|Royale|Lone|Wolf)\b/g;
   const problems = [];
   Object.keys(strings.hi).forEach(function (key) {
     const stripped = strings.hi[key].replace(allowed, "");

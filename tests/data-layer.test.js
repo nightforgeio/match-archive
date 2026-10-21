@@ -51,6 +51,10 @@ ok("exports sortMatches", typeof A.sortMatches === "function");
 ok("exports parseDate", typeof A.parseDate === "function");
 ok("exports formatMoney", typeof A.formatMoney === "function");
 ok("MODES is CS/BR/LW", JSON.stringify(A.MODES) === '["CS","BR","LW"]', JSON.stringify(A.MODES));
+ok("MODE_LABELS names every mode", A.MODES.every((m) => !!A.MODE_LABELS[m]), JSON.stringify(A.MODE_LABELS));
+ok("CS is Clash Squad", A.MODE_LABELS.CS === "Clash Squad", A.MODE_LABELS.CS);
+ok("BR is Battle Royale", A.MODE_LABELS.BR === "Battle Royale", A.MODE_LABELS.BR);
+ok("LW is Lone Wolf", A.MODE_LABELS.LW === "Lone Wolf", A.MODE_LABELS.LW);
 ok("RESULTS is W/L/D", JSON.stringify(A.RESULTS) === '["W","L","D"]', JSON.stringify(A.RESULTS));
 ok("EVENTS has 5 types", A.EVENTS.length === 5, A.EVENTS.join(","));
 
@@ -82,9 +86,9 @@ const n = A.normalizeMatch.bind(A);
       mode: "cs",
       event: "tournament",
       eventName: "  Weekly Cup  ",
-      map: "  Mirage ",
+      map: "  Bermuda ",
       opponent: "  Velocity ",
-      score: " 13-7 ",
+      score: "  3-1 ",
       result: "w",
       placement: "2",
       entryFee: "500",
@@ -98,9 +102,9 @@ const n = A.normalizeMatch.bind(A);
   ok("canonicalises event case", m.event === "Tournament", m.event);
   ok("uppercases a lowercase result", m.result === "W", m.result);
   ok("trims the event name", m.eventName === "Weekly Cup", JSON.stringify(m.eventName));
-  ok("trims the map", m.map === "Mirage", JSON.stringify(m.map));
+  ok("trims the map", m.map === "Bermuda", JSON.stringify(m.map));
   ok("trims the opponent", m.opponent === "Velocity", JSON.stringify(m.opponent));
-  ok("trims the score", m.score === "13-7", JSON.stringify(m.score));
+  ok("trims the score", m.score === "3-1", JSON.stringify(m.score));
   ok("trims the notes", m.notes === "good game", JSON.stringify(m.notes));
   ok("coerces a string placement to a number", m.placement === 2, m.placement);
   ok("coerces a string entry fee to a number", m.entryFee === 500, m.entryFee);
@@ -228,12 +232,42 @@ ok("the ids are unique", (function () {
   return new Set(ids).size === ids.length;
 })());
 ok("every published record is flagged as a sample", published.matches.every((m) => m.demo === true));
+// The archive is a Free Fire MAX record. A map or note from a different
+// game is a factual error that no schema check would catch, so the
+// published data is checked for the vocabulary of the wrong game.
+const WRONG_GAME = /mirage|inferno|dust ?ii|erangel|livik|nuketown|firing range|ancient|counter.?strike|lucky wheel|valorant/i;
+const wrongGameRecords = published.matches.filter(function (m) {
+  return (
+    WRONG_GAME.test(m.map || "") ||
+    WRONG_GAME.test(m.notes || "") ||
+    WRONG_GAME.test(m.eventName || "")
+  );
+});
+ok(
+  "no published record names a map or mode from another game",
+  wrongGameRecords.length === 0,
+  JSON.stringify(wrongGameRecords.map((m) => m.id + ":" + m.map))
+);
+ok(
+  "every published map is a Free Fire map",
+  published.matches.every(function (m) {
+    return /bermuda|purgatory|kalahari|alpine|nexterra|solara/i.test(m.map || "");
+  }),
+  JSON.stringify(published.matches.map((m) => m.map))
+);
 
 console.log("\n=== PUBLISHED TEAM FILE ===");
 ok("data/team.json has a name", typeof teamFile.name === "string" && teamFile.name.length > 0);
 ok("data/team.json has a city", typeof teamFile.city === "string" && teamFile.city.length > 0);
 ok("the whatsapp number is digits only", /^[0-9]+$/.test(teamFile.whatsapp), teamFile.whatsapp);
 ok("the whatsapp number has the country code", teamFile.whatsapp.slice(0, 2) === "91", teamFile.whatsapp);
+// The team copy is the first thing a visitor reads. It has to name the
+// game the archive is actually about.
+ok("the team copy names Free Fire MAX", /free fire max/i.test(teamFile.tagline + " " + teamFile.about), teamFile.tagline);
+ok("the team copy does not name another game", !/counter.?strike|lucky wheel|valorant/i.test(teamFile.tagline + " " + teamFile.about), teamFile.about);
+ok("the Hindi team copy is present", typeof teamFile.aboutHi === "string" && teamFile.aboutHi.length > 0);
+ok("the Hindi team copy names Free Fire MAX", /free fire max/i.test(teamFile.taglineHi + " " + teamFile.aboutHi), teamFile.taglineHi);
+ok("the Hindi team copy does not name another game", !/counter.?strike|lucky wheel/i.test(teamFile.taglineHi + " " + teamFile.aboutHi), teamFile.aboutHi);
 
 console.log("\nRESULTS: " + pass + " passed, " + fail + " failed");
 process.exit(fail > 0 ? 1 : 0);

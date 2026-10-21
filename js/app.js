@@ -29,6 +29,25 @@
   function lang() {
     return window.I18N ? window.I18N.getLang() : "en";
   }
+  // The display name of a mode code, e.g. "CS" -> "Clash Squad".
+  //
+  // The mode name is a proper noun in the game, so it is never translated
+  // into a different word — but the label still has to come from one
+  // place. The i18n dictionary is checked first, and the shared
+  // MODE_LABELS map in data.js is the fallback, so a code with no
+  // dictionary entry still renders a real name instead of a bare code.
+  function modeLabel(code) {
+    const key =
+      "mode" +
+      String(code || "").charAt(0) +
+      String(code || "")
+        .slice(1)
+        .toLowerCase();
+    const label = t(key);
+    if (label && label !== key) return label;
+    const labels = window.ArchiveData ? window.ArchiveData.MODE_LABELS : null;
+    return (labels && labels[code]) || code || "";
+  }
 
   // --- Escaping -------------------------------------------------------------
 
@@ -83,8 +102,8 @@
         "</span>"
       : "";
 
-    const modeLabel = m.mode
-      ? '<span class="badge badge--mode">' + esc(m.mode) + "</span>"
+    const modeBadge = m.mode
+      ? '<span class="badge badge--mode">' + esc(modeLabel(m.mode)) + "</span>"
       : "";
 
     const resultBadge = m.result
@@ -115,7 +134,7 @@
       '<span class="match__date">' +
       esc(window.ArchiveData.formatDate(m.date, l)) +
       "</span>" +
-      modeLabel +
+      modeBadge +
       eventLabel +
       resultBadge +
       "</div>" +
@@ -167,6 +186,7 @@
       m.notes,
       m.score,
       m.mode,
+      m.mode ? modeLabel(m.mode) : "",
       m.result,
     ]
       .join(" ")
@@ -261,8 +281,8 @@
     }
 
     el.statsGrid.innerHTML = html;
-    renderBreakdown(el.breakdownModes, s.modes);
-    renderBreakdown(el.breakdownEvents, s.events);
+    renderBreakdown(el.breakdownModes, s.modes, "mode");
+    renderBreakdown(el.breakdownEvents, s.events, "event");
   }
 
   // Back to "YYYY-MM-DD" for a Date the stats layer produced.
@@ -274,7 +294,12 @@
   }
 
   // A breakdown row: the key, a proportional bar and the W/L count.
-  function renderBreakdown(container, rows) {
+  //
+  // The same renderer draws the mode breakdown and the event breakdown, so
+  // it needs to know which kind of key it is holding. A mode key is a code
+  // like "CS" and gets the full mode name; an event key is a word like
+  // "Tournament" and gets the translated event name.
+  function renderBreakdown(container, rows, kind) {
     if (!container) return;
     if (!rows || rows.length === 0) {
       container.innerHTML = '<p class="state__body">—</p>';
@@ -286,15 +311,18 @@
 
     container.innerHTML = rows
       .map(function (r) {
-        const label = r.key;
+        const label =
+          kind === "mode"
+            ? modeLabel(r.key)
+            : t("event" + r.key) !== "event" + r.key
+              ? t("event" + r.key)
+              : r.key;
         const pct = max > 0 ? Math.round((r.played / max) * 100) : 0;
         return (
           '<div class="breakdown__row">' +
           '<div class="breakdown__head">' +
           '<span class="breakdown__key">' +
-          esc(
-            t("event" + label) !== "event" + label ? t("event" + label) : label,
-          ) +
+          esc(label) +
           "</span>" +
           '<span class="breakdown__val mono">' +
           esc(r.wins) +
@@ -461,7 +489,7 @@
         '<button class="chip" data-filter="mode" data-value="' +
         esc(m) +
         '" aria-pressed="false">' +
-        esc(m) +
+        esc(modeLabel(m)) +
         ' <span class="chip__count">' +
         esc(count) +
         "</span></button>";

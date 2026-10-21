@@ -125,6 +125,12 @@ function makeWindow(opts) {
   ok("the sample banner is visible while samples exist", !doc.getElementById("demoBanner").hidden);
   ok("the stats grid rendered", doc.querySelectorAll("#statsGrid .stat").length >= 12, doc.querySelectorAll("#statsGrid .stat").length);
   ok("the mode breakdown rendered", doc.querySelectorAll("#breakdownModes .breakdown__row").length === 3);
+  ok(
+    "the mode breakdown shows the full mode names",
+    Array.from(doc.querySelectorAll("#breakdownModes .breakdown__key")).map((e) => e.textContent.trim()).join("|") ===
+      "Clash Squad|Battle Royale|Lone Wolf",
+    Array.from(doc.querySelectorAll("#breakdownModes .breakdown__key")).map((e) => e.textContent.trim()).join("|")
+  );
   ok("the event breakdown rendered", doc.querySelectorAll("#breakdownEvents .breakdown__row").length > 0);
 
   // =========================================================================
@@ -139,18 +145,18 @@ function makeWindow(opts) {
   );
   const firstCard = cards()[0];
   ok("the card shows the event name", firstCard.querySelector(".match__event").textContent.indexOf("Weekly Cup #12") !== -1);
-  ok("the card shows the mode badge", firstCard.querySelector(".badge--mode").textContent.trim() === "CS");
+  ok("the card shows the mode badge", firstCard.querySelector(".badge--mode").textContent.trim() === "Clash Squad", firstCard.querySelector(".badge--mode").textContent.trim());
   ok("the card shows the opponent", firstCard.querySelector(".match__opponent").textContent.trim() === "Team Velocity");
-  ok("the card shows the score", firstCard.querySelector(".match__score").textContent.trim() === "13-7");
+  ok("the card shows the score", firstCard.querySelector(".match__score").textContent.trim() === "3-1");
   ok("the card shows the result", firstCard.querySelector(".match__result").textContent.trim() === "W");
   ok("the card carries the result on the article", firstCard.getAttribute("data-result") === "W");
   ok("the card carries the record id", firstCard.getAttribute("data-id") === "demo-001");
   ok("the card shows the entry fee", firstCard.querySelector(".match__meta").textContent.indexOf("500") !== -1);
   ok("the card shows the prize", firstCard.querySelector(".match__meta").textContent.indexOf("10,000") !== -1);
   ok("the card shows the placement", firstCard.querySelector(".match__meta").textContent.indexOf("#1") !== -1);
-  ok("the card shows the map", firstCard.querySelector(".match__meta").textContent.indexOf("Mirage") !== -1);
+  ok("the card shows the map", firstCard.querySelector(".match__meta").textContent.indexOf("Bermuda") !== -1);
   ok("the card is marked as a sample", firstCard.querySelector(".match__demo-tag") !== null);
-  ok("the card shows the notes", firstCard.querySelector(".match__notes").textContent.indexOf("Demo record") === 0);
+  ok("the card shows the notes", firstCard.querySelector(".match__notes").textContent.indexOf("Sample record") === 0, firstCard.querySelector(".match__notes").textContent);
 
   // =========================================================================
   console.log("\n=== FILTERS ===");
@@ -165,8 +171,13 @@ function makeWindow(opts) {
   ok("the All chip is no longer pressed", chip("chipMode", "").getAttribute("aria-pressed") === "false");
   ok("the count follows the filter", T("resultCount").indexOf("4") === 0, T("resultCount"));
   ok(
-    "every visible card is CS",
-    Array.from(cards()).every((c) => c.querySelector(".badge--mode").textContent.trim() === "CS")
+    "the mode chip shows the full mode name",
+    chip("chipMode", "CS").textContent.indexOf("Clash Squad") !== -1,
+    chip("chipMode", "CS").textContent.trim()
+  );
+  ok(
+    "every visible card is Clash Squad",
+    Array.from(cards()).every((c) => c.querySelector(".badge--mode").textContent.trim() === "Clash Squad")
   );
 
   click(chip("chipMode", "CS"));
@@ -243,10 +254,10 @@ function makeWindow(opts) {
   await settle();
   ok("the year filter combines with the mode filter", cards().length === 3, cards().length + " cards");
   ok(
-    "every visible card is CS from 2026",
+    "every visible card is Clash Squad from 2026",
     Array.from(cards()).every(
       (c) =>
-        c.querySelector(".badge--mode").textContent.trim() === "CS" &&
+        c.querySelector(".badge--mode").textContent.trim() === "Clash Squad" &&
         c.querySelector(".match__date").textContent.indexOf("2026") !== -1
     )
   );
@@ -266,16 +277,20 @@ function makeWindow(opts) {
   await settle();
   ok("search matches on the opponent", cards().length === 1, cards().length + " cards");
 
-  search.value = "MIRAGE";
+  search.value = "purgatory";
   search.dispatchEvent(new w.Event("input", { bubbles: true }));
   await settle();
   ok("search is case-insensitive", cards().length === 1, cards().length + " cards");
-
-  search.value = "Erangel";
+  search.value = "Kalahari";
   search.dispatchEvent(new w.Event("input", { bubbles: true }));
   await settle();
   ok("search matches on the map", cards().length === 1, cards().length + " cards");
-
+  // The full mode name is searchable, so a visitor can type what they
+  // see on the card rather than the internal code.
+  search.value = "lone wolf";
+  search.dispatchEvent(new w.Event("input", { bubbles: true }));
+  await settle();
+  ok("search matches on the mode name", cards().length === 2, cards().length + " cards");
   search.value = "zzz-no-such-opponent";
   search.dispatchEvent(new w.Event("input", { bubbles: true }));
   await settle();
@@ -454,6 +469,43 @@ function makeWindow(opts) {
   }
 
   // =========================================================================
+  console.log("\n=== GAME IDENTITY ===");
+  // The archive is a Free Fire MAX record. The mode codes stay short in
+  // the data, but the page has to show the official mode names, and no
+  // part of the page may name a mode or a map from a different game.
+  {
+    const pageText = doc.body.textContent;
+    ok(
+      "the page names Free Fire MAX",
+      /free fire max/i.test(pageText),
+      pageText.slice(0, 120)
+    );
+    ok(
+      "the page does not name another game",
+      !/counter.?strike|lucky wheel|valorant/i.test(pageText)
+    );
+    ok(
+      "the page shows the Clash Squad mode name",
+      pageText.indexOf("Clash Squad") !== -1
+    );
+    ok(
+      "the page shows the Battle Royale mode name",
+      pageText.indexOf("Battle Royale") !== -1
+    );
+    ok(
+      "the page shows the Lone Wolf mode name",
+      pageText.indexOf("Lone Wolf") !== -1
+    );
+    // The raw codes are internal, so they must not leak into the page.
+    ok(
+      "the bare mode codes are not shown as badges",
+      Array.from(doc.querySelectorAll("#matchList .badge--mode")).every(
+        (b) => b.textContent.trim() !== "CS" && b.textContent.trim() !== "BR" && b.textContent.trim() !== "LW"
+      )
+    );
+  }
+
+  // =========================================================================
   console.log("\n=== ERROR STATE ===");
   {
     const w2 = makeWindow({ failMatches: true });
@@ -490,9 +542,9 @@ function makeWindow(opts) {
           mode: "CS",
           event: "Tournament",
           eventName: '<script>alert("xss")</script>',
-          map: "Mirage",
+          map: "Bermuda",
           opponent: '"><b>bold</b>',
-          score: "13-7",
+          score: "3-1",
           result: "W",
           entryFee: 100,
           prize: 200,

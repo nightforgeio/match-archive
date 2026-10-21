@@ -1,7 +1,7 @@
 {
   "name": "NightForge Match Archive",
   "short_name": "NF Archive",
-  "description": "Every match, every entry fee, every prize. The complete CS, BR and LW tournament and scrim record for NightForge.",
+  "description": "Every match, every entry fee, every prize. The complete Free Fire MAX tournament and scrim record for NightForge.",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",

@@ -212,6 +212,7 @@
             played: 0,
             wins: 0,
             losses: 0,
+            draws: 0,
             prize: 0,
             entry: 0,
           });
@@ -220,6 +221,7 @@
         row.played += 1;
         if (m.result === "W") row.wins += 1;
         if (m.result === "L") row.losses += 1;
+        if (m.result === "D") row.draws += 1;
         row.prize += m.prize;
         row.entry += m.entryFee;
       });

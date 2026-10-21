@@ -130,13 +130,14 @@
       '" data-id="' +
       esc(m.id) +
       '">' +
+      resultBadge +
+      '<div class="match__body">' +
       '<div class="match__head">' +
       '<span class="match__date">' +
       esc(window.ArchiveData.formatDate(m.date, l)) +
       "</span>" +
       modeBadge +
       eventLabel +
-      resultBadge +
       "</div>" +
       '<h3 class="match__event">' +
       esc(m.eventName || m.event || "—") +
@@ -162,6 +163,7 @@
       meta +
       "</dl>" +
       notes +
+      "</div>" +
       "</article>"
     );
   }
@@ -299,6 +301,11 @@
   // it needs to know which kind of key it is holding. A mode key is a code
   // like "CS" and gets the full mode name; an event key is a word like
   // "Tournament" and gets the translated event name.
+  //
+  // The bar is a split, not a single fill: the wins take the win colour,
+  // the losses take the loss colour, and the part of the scale the row did
+  // not reach stays neutral. That way the bar shows the record, not just
+  // the volume.
   function renderBreakdown(container, rows, kind) {
     if (!container) return;
     if (!rows || rows.length === 0) {
@@ -317,7 +324,40 @@
             : t("event" + r.key) !== "event" + r.key
               ? t("event" + r.key)
               : r.key;
-        const pct = max > 0 ? Math.round((r.played / max) * 100) : 0;
+        const scale = max > 0 ? max : 1;
+        const wins = r.wins || 0;
+        const losses = r.losses || 0;
+        const draws = r.draws || 0;
+        const played = r.played || 0;
+        // Each segment is a share of the widest row, so the bars stay
+        // comparable down the column.
+        const winPct = (wins / scale) * 100;
+        const lossPct = (losses / scale) * 100;
+        const drawPct = (draws / scale) * 100;
+        const restPct = Math.max(0, 100 - winPct - lossPct - drawPct);
+
+        let bar = "";
+        if (wins > 0)
+          bar +=
+            '<span class="breakdown__bar-win" style="--w:' +
+            winPct.toFixed(2) +
+            '%"></span>';
+        if (losses > 0)
+          bar +=
+            '<span class="breakdown__bar-loss" style="--w:' +
+            lossPct.toFixed(2) +
+            '%"></span>';
+        if (draws > 0)
+          bar +=
+            '<span class="breakdown__bar-draw" style="--w:' +
+            drawPct.toFixed(2) +
+            '%"></span>';
+        if (restPct > 0)
+          bar +=
+            '<span class="breakdown__bar-rest" style="--w:' +
+            restPct.toFixed(2) +
+            '%"></span>';
+
         return (
           '<div class="breakdown__row">' +
           '<div class="breakdown__head">' +
@@ -325,16 +365,18 @@
           esc(label) +
           "</span>" +
           '<span class="breakdown__val mono">' +
-          esc(r.wins) +
+          esc(wins) +
           "W / " +
-          esc(r.losses) +
-          "L · " +
-          esc(r.played) +
+          esc(losses) +
+          "L" +
+          (draws > 0 ? " / " + esc(draws) + "D" : "") +
+          " · " +
+          esc(played) +
           "</span>" +
           "</div>" +
-          '<div class="breakdown__bar"><span style="--w:' +
-          pct +
-          '%"></span></div>' +
+          '<div class="breakdown__bar">' +
+          bar +
+          "</div>" +
           "</div>"
         );
       })
@@ -348,11 +390,30 @@
     const num = window.ArchiveData.formatNumber;
     const money = window.ArchiveData.formatMoney;
 
-    if (el.heroMatches) el.heroMatches.textContent = num(s.total, l);
-    if (el.heroWins) el.heroWins.textContent = num(s.wins, l);
-    if (el.heroPrize) el.heroPrize.textContent = money(s.totalPrize, l) || "—";
-    if (el.heroWinRate) el.heroWinRate.textContent = s.winRate.toFixed(1) + "%";
+    // The headline numbers live in the board panel in the hero. They read
+    // from the same stats object the stats section uses, so the two can
+    // never disagree.
+    if (el.boardMatches) el.boardMatches.textContent = num(s.total, l);
+    if (el.boardWins) el.boardWins.textContent = num(s.wins, l);
+    if (el.boardWinRate)
+      el.boardWinRate.textContent = s.winRate.toFixed(1) + "%";
+    if (el.boardPrize)
+      el.boardPrize.textContent = money(s.totalPrize, l) || "—";
 
+    // The season label follows the archive, not a hard-coded year. The
+    // window is the span between the first and the last record, so a
+    // roster that only played in one year reads as one season.
+    if (el.boardSeason) {
+      const first = s.firstDate ? s.firstDate.getFullYear() : null;
+      const last = s.lastDate ? s.lastDate.getFullYear() : null;
+      if (first && last && first !== last) {
+        el.boardSeason.textContent = first + "–" + last;
+      } else if (first) {
+        el.boardSeason.textContent = String(first);
+      } else {
+        el.boardSeason.textContent = "—";
+      }
+    }
     // Recent form — the last 10 results, newest first.
     if (el.formRow) {
       const recent = state.matches.slice(0, 10);
@@ -377,6 +438,71 @@
     }
   }
 
+  // --- Modes rail ----------------------------------------------------------
+  //
+  // The three Free Fire MAX competitive modes, each with its own record
+  // and a link that filters the archive to it. The description is what
+  // the mode actually is, so a visitor who does not know the game can
+  // still tell what they are looking at.
+
+  const MODE_DESCRIPTIONS = {
+    CS: "modeDescCs",
+    BR: "modeDescBr",
+    LW: "modeDescLw",
+  };
+
+  function renderModes() {
+    if (!el.modeRail) return;
+    const l = lang();
+    const num = window.ArchiveData.formatNumber;
+    const modes = window.ArchiveData.MODES;
+
+    el.modeRail.innerHTML = modes
+      .map(function (code, i) {
+        const rows = state.matches.filter(function (m) {
+          return m.mode === code;
+        });
+        const wins = rows.filter(function (m) {
+          return m.result === "W";
+        }).length;
+        const descKey = MODE_DESCRIPTIONS[code];
+        const desc = descKey ? t(descKey) : "";
+
+        return (
+          '<li class="rv">' +
+          '<a class="mode" href="#archive" data-mode-link="' +
+          esc(code) +
+          '">' +
+          '<span class="mode__index" aria-hidden="true">' +
+          String(i + 1).padStart(2, "0") +
+          "</span>" +
+          '<span class="mode__name">' +
+          esc(modeLabel(code)) +
+          "</span>" +
+          '<span class="mode__desc">' +
+          esc(desc) +
+          "</span>" +
+          '<span class="mode__stat"><b>' +
+          esc(num(rows.length, l)) +
+          "</b>" +
+          esc(t("modePlayed")) +
+          "</span>" +
+          '<span class="mode__stat mode__stat--plain"><b>' +
+          esc(num(wins, l)) +
+          "</b>" +
+          esc(t("modeWon")) +
+          "</span>" +
+          '<span class="mode__go">' +
+          esc(t("modeView")) +
+          '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"></path></svg>' +
+          "</span>" +
+          "</a>" +
+          "</li>"
+        );
+      })
+      .join("");
+  }
+
   function renderTeam() {
     const team = state.team;
     if (!team) return;
@@ -384,6 +510,12 @@
     if (el.brandName) el.brandName.textContent = team.name;
     if (el.brandMark) el.brandMark.textContent = team.logoText || "NF";
     if (el.heroTeamName) el.heroTeamName.textContent = team.name;
+
+    // The board panel repeats the team identity, so the hero reads as a
+    // roster card rather than a page of floating text.
+    if (el.boardName) el.boardName.textContent = team.name;
+    if (el.boardMark) el.boardMark.textContent = team.logoText || "NF";
+    if (el.boardCity) el.boardCity.textContent = team.city || "";
 
     // The owner can supply a Hindi tagline and description. When they are
     // present the Hindi view uses them; otherwise the English text stays,
@@ -467,6 +599,7 @@
   function renderAll() {
     renderTeam();
     renderHero();
+    renderModes();
     renderList();
     renderStats();
   }
@@ -641,6 +774,19 @@
         renderList();
         return;
       }
+
+      // A mode card in the modes rail applies that mode as a filter and
+      // sends the visitor to the archive. It is a shortcut, not a
+      // separate view — the archive list stays the single source.
+      const modeLink = e.target.closest
+        ? e.target.closest("[data-mode-link]")
+        : null;
+      if (modeLink) {
+        const code = modeLink.getAttribute("data-mode-link");
+        state.filters.mode = state.filters.mode === code ? "" : code;
+        syncChips();
+        renderList();
+      }
     });
 
     if (el.searchInput) {
@@ -694,6 +840,10 @@
       // i18n.apply() rewrites every data-i18n-aria label, including the
       // burger's — which is state-dependent, so it has to be re-stated.
       updateMenuLabel();
+      // The modes rail is re-rendered, which replaces its reveal nodes
+      // with fresh ones that have not been observed yet. Without this
+      // they would stay invisible.
+      setupReveal();
     });
 
     // Copy / share actions.
@@ -766,9 +916,80 @@
 
   // --- Reveal + progress ----------------------------------------------------
 
-  function setupReveal() {
-    const nodes = document.querySelectorAll(".rv");
+  // The reveal observer is kept so it can be torn down before a new one is
+  // created. Every language change re-renders the modes rail, which
+  // replaces its reveal nodes — without re-observing them they would stay
+  // invisible, and without tearing the old observer down they would leak.
+  let revealObserver = null;
+  let revealFailsafe = null;
+
+  // How long a reveal may stay pending before the content is checked.
+  // Long enough for a real scroll to trigger the observer, short enough
+  // that a visitor is never looking at a blank section.
+  const REVEAL_FAILSAFE_MS = 2500;
+
+  // Every reveal node that has not been revealed yet.
+  function pendingRevealNodes() {
+    return Array.prototype.filter.call(
+      document.querySelectorAll(".rv"),
+      function (n) {
+        return !n.classList.contains("in");
+      },
+    );
+  }
+
+  // Reveal anything the visitor has already scrolled past.
+  //
+  // An IntersectionObserver only reports an element WHILE it is on
+  // screen. A jump — a nav anchor link, a restored scroll position, a
+  // fast flick on a touchpad — can move the viewport past a node
+  // between two frames, so the node never intersects and stays hidden
+  // forever. The result is a band of empty space in the middle of the
+  // page. Anything whose top has already passed the viewport top is
+  // behind the visitor, so it is revealed whether it was seen or not.
+  function revealScrolledPast() {
+    var nodes = pendingRevealNodes();
     if (!nodes.length) return;
+    nodes.forEach(function (n) {
+      var rect = n.getBoundingClientRect();
+      if (rect.top <= 0) n.classList.add("in");
+    });
+  }
+
+  function setupReveal() {
+    if (revealObserver) {
+      revealObserver.disconnect();
+      revealObserver = null;
+    }
+    // Only the nodes that are still hidden are worth observing. A node
+    // that already carries .in has been revealed and will not change.
+    const nodes = pendingRevealNodes();
+    if (!nodes.length) return;
+
+    // SAFETY NET. A reveal node that never fires must not stay invisible
+    // forever. An element that is clipped, collapsed or painted with a
+    // zero-area mask reports itself as never intersecting, and the
+    // content would be lost with it.
+    //
+    // Only the nodes the visitor could actually be looking at are forced
+    // open — the ones inside or above the viewport. A node further down
+    // the page keeps its scroll reveal, so the page still unfolds as the
+    // visitor moves through it instead of dumping the whole document on
+    // them at once.
+    if (revealFailsafe) {
+      window.clearTimeout(revealFailsafe);
+      revealFailsafe = null;
+    }
+    revealFailsafe = window.setTimeout(function () {
+      var vh = window.innerHeight || 0;
+      nodes.forEach(function (n) {
+        var rect = n.getBoundingClientRect();
+        // top <= vh covers "on screen" and "already scrolled past".
+        // A node entirely below the fold is left for the observer.
+        if (rect.top <= vh) n.classList.add("in");
+      });
+      revealFailsafe = null;
+    }, REVEAL_FAILSAFE_MS);
 
     if (!("IntersectionObserver" in window)) {
       nodes.forEach(function (n) {
@@ -777,33 +998,69 @@
       return;
     }
 
-    const io = new IntersectionObserver(
+    // threshold 0 with a negative bottom root margin: the reveal fires
+    // when the element's top crosses 90% of the viewport height. A ratio
+    // threshold would fail for an element taller than the viewport — 12%
+    // of a very tall block can be more than a screenful, so the ratio
+    // could never be reached and the section would stay hidden.
+    revealObserver = new IntersectionObserver(
       function (entries) {
         entries.forEach(function (entry) {
           if (entry.isIntersecting) {
             entry.target.classList.add("in");
-            io.unobserve(entry.target);
+            revealObserver.unobserve(entry.target);
           }
         });
       },
-      { threshold: 0.12 },
+      { threshold: 0, rootMargin: "0px 0px -10% 0px" },
     );
 
     nodes.forEach(function (n) {
-      io.observe(n);
+      revealObserver.observe(n);
     });
+  }
+
+  // The scroll sweep is registered ONCE, not on every setupReveal call,
+  // so a language change cannot stack listeners. It reads the pending
+  // nodes fresh each time, so it picks up the nodes a language change
+  // replaced.
+  let revealScrollBound = false;
+  function setupRevealScroll() {
+    if (revealScrollBound) return;
+    revealScrollBound = true;
+    var ticking = false;
+    window.addEventListener(
+      "scroll",
+      function () {
+        if (!ticking) {
+          ticking = true;
+          window.requestAnimationFrame(function () {
+            revealScrolledPast();
+            ticking = false;
+          });
+        }
+      },
+      { passive: true },
+    );
   }
 
   function setupProgress() {
     const bar = $("progress");
-    if (!bar) return;
+    const header = el.header;
     let ticking = false;
 
     function update() {
       const doc = document.documentElement;
       const max = doc.scrollHeight - window.innerHeight;
       const pct = max > 0 ? Math.min(1, window.scrollY / max) : 0;
-      bar.style.transform = "scaleX(" + pct + ")";
+      if (bar) bar.style.transform = "scaleX(" + pct + ")";
+
+      // The header picks up an ember hairline once the page has moved, so
+      // the sticky bar separates from the content behind it.
+      if (header) {
+        if (window.scrollY > 8) header.classList.add("is-scrolled");
+        else header.classList.remove("is-scrolled");
+      }
       ticking = false;
     }
 
@@ -837,10 +1094,6 @@
     el.brandName = $("brandName");
     el.brandMark = $("brandMark");
     el.heroTeamName = $("heroTeamName");
-    el.heroMatches = $("heroMatches");
-    el.heroWins = $("heroWins");
-    el.heroPrize = $("heroPrize");
-    el.heroWinRate = $("heroWinRate");
     el.formRow = $("formRow");
     el.demoBanner = $("demoBanner");
     el.matchList = $("matchList");
@@ -861,6 +1114,18 @@
     el.statsGrid = $("statsGrid");
     el.breakdownModes = $("breakdownModes");
     el.breakdownEvents = $("breakdownEvents");
+    // The board panel and the modes rail.
+    el.boardMark = $("boardMark");
+    el.boardName = $("boardName");
+    el.boardCity = $("boardCity");
+    el.boardSeason = $("boardSeasonValue");
+    el.boardMatches = $("boardMatches");
+    el.boardWins = $("boardWins");
+    el.boardWinRate = $("boardWinRate");
+    el.boardPrize = $("boardPrize");
+    el.modeRail = $("modeRail");
+    el.header = $("header");
+
     el.teamAbout = $("teamAbout");
     el.teamTagline = $("teamTagline");
     el.footerYear = $("footerYear");
@@ -871,6 +1136,7 @@
 
     wire();
     setupProgress();
+    setupRevealScroll();
 
     window.ArchiveData.loadAll()
       .then(function (data) {
@@ -885,6 +1151,11 @@
         buildChips();
         renderAll();
         setupReveal();
+        // The page may have been opened with a hash in the URL, or the
+        // browser may have restored a scroll position. Either way the
+        // visitor is already past sections the observer never saw, so
+        // those are opened straight away.
+        revealScrolledPast();
       })
       .catch(function () {
         showError();

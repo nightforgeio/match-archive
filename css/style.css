@@ -1,7 +1,51 @@
+/* ==========================================================================
+   NightForge Match Archive — design system
+
+   A Free Fire MAX esports archive, not a brochure. The visual language is
+   taken from broadcast graphics: a hot ember accent on deep ink, angular
+   cut corners on the elements that carry identity, a hard-edged scoreboard
+   for the numbers, and motion that reads like a results ticker.
+
+   COLOUR DISCIPLINE
+     One neutral base + one accent (ember orange). The only other colours
+     are the semantic result states (win / loss / draw) — those carry
+     meaning, not decoration. Mode and event badges stay monochrome so the
+     eye only follows colour where it means something.
+
+   GEOMETRY
+     Three kinds of surface, three treatments, on purpose:
+       - IDENTITY elements (brand mark, primary button, mode badge, result
+         flag) get an angular cut corner. They are solid, so the clip cuts
+         cleanly.
+       - UTILITY elements (chips, inputs) get a small radius or a 1px
+         gradient border that follows a cut corner.
+       - CONTAINERS (cards, panels) get a soft radius and a hairline
+         border. A panel with a clipped shadow looks broken.
+
+   MOTION
+     Every duration and every delay comes from a token, so the reduced
+     motion block can collapse the whole system to zero by reassigning
+     those tokens. No declaration anywhere needs !important.
+   ========================================================================== */
+
 @font-face {
   font-family: "Space Grotesk";
   src: url("../fonts/space-grotesk-var.woff2") format("woff2");
   font-weight: 300 700;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Barlow Condensed";
+  src: url("../fonts/barlow-condensed-700.woff2") format("woff2");
+  font-weight: 700;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Barlow Condensed";
+  src: url("../fonts/barlow-condensed-600.woff2") format("woff2");
+  font-weight: 600;
   font-display: swap;
 }
 
@@ -20,45 +64,36 @@
 }
 
 /* ==========================================================================
-   NightForge Match Archive — design system
-
-   A competitive archive, not a brochure. Dark instrument-panel look:
-   near-black base, one cyan accent, monospaced labels and tabular numerals
-   so a column of scores lines up the way a scoreboard does.
-
-   COLOUR DISCIPLINE
-     One neutral base + one accent (cyan). The only other colours are the
-     semantic result states (win / loss / draw) — those carry meaning, not
-     decoration. Mode and event badges stay monochrome so the eye only
-     follows colour where it means something.
+   Tokens
    ========================================================================== */
 
 :root {
   /* Surfaces — layered, never pure black. Borders separate, not shadows. */
-  --bg: #08090c;
-  --bg-2: #0c0e13;
-  --card: #11141a;
-  --card-2: #161a22;
-  --line: #22262f;
-  --line-2: #2e3440;
+  --bg: #0a0a0f;
+  --bg-2: #101017;
+  --card: #15151e;
+  --card-2: #1c1c27;
+  --line: #262633;
+  --line-2: #35354a;
 
   /* Text — every pairing below passes 4.5:1 on --bg and on --card. */
-  --fg: #f2f4f7;
-  --fg-2: #ccd2dc;
-  --muted: #8b93a3;
+  --fg: #f4f3f7;
+  --fg-2: #d6d4de;
+  --muted: #9896a6;
 
   /* One accent. Used for action, emphasis and key numbers only. */
-  --accent: #22d3ee;
-  --accent-ink: #04121a;
-  --accent-dim: rgb(34 211 238 / 12%);
-  --accent-line: rgb(34 211 238 / 34%);
+  --accent: #ff6b1a;
+  --accent-ink: #170700;
+  --accent-dim: rgb(255 107 26 / 14%);
+  --accent-line: rgb(255 107 26 / 38%);
+  --accent-glow: rgb(255 107 26 / 26%);
 
   /* Semantic result states. */
-  --win: #34d399;
-  --loss: #f87171;
-  --draw: #fbbf24;
+  --win: #3ddc84;
+  --loss: #ff5a5a;
+  --draw: #9aa3b8;
 
-  --radius-card: 16px;
+  --radius-card: 18px;
   --radius-sm: 10px;
   --radius-pill: 999px;
 
@@ -72,8 +107,13 @@
 
   --font-d:
     "Space Grotesk", system-ui, -apple-system, "Segoe UI", roboto, sans-serif;
+  /* The display face. Barlow Condensed is a broadcast face — narrow, heavy
+     and flat, which is exactly what an esports lower-third wants. */
+  --font-display:
+    "Barlow Condensed", "Arial Narrow", "Space Grotesk", sans-serif;
   --font-m:
-    "JetBrains Mono", ui-monospace, sfmono-regular, menlo, consolas, monospace;
+    "JetBrains Mono", "Noto Sans Devanagari", ui-monospace, sfmono-regular,
+    menlo, consolas, monospace;
   --font-hi: "Noto Sans Devanagari", "Nirmala UI", "Mangal", var(--font-d);
 
   --wrap: 1180px;
@@ -82,6 +122,7 @@
   --safe-b: env(safe-area-inset-bottom, 0px);
 
   --ease: cubic-bezier(0.2, 0.7, 0.2, 1);
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
 
   /* Every duration in the stylesheet comes from one of these tokens, so the
      reduced-motion block can collapse them all to zero by reassigning the
@@ -90,6 +131,23 @@
   --dur: 0.22s;
   --dur-med: 0.5s;
   --dur-slow: 1.4s;
+
+  /* The stagger between successive elements in a sequence. Zeroed by the
+     reduced-motion block along with the durations. */
+  --stagger: 45ms;
+  --iter: infinite;
+
+  /* Angular cut corners. */
+  --cut-sm: polygon(0 0, calc(100% - 9px) 0, 100% 9px, 100% 100%, 0 100%);
+  --cut-md: polygon(0 0, calc(100% - 14px) 0, 100% 14px, 100% 100%, 0 100%);
+  --cut-lg: polygon(0 0, calc(100% - 24px) 0, 100% 24px, 100% 100%, 0 100%);
+}
+
+/* The Hindi locale swaps the display face for the Devanagari face — a
+   condensed Latin face has no Devanagari glyphs, and the browser would
+   fall back to an arbitrary system font. */
+html[lang="hi"] {
+  --font-display: var(--font-hi);
 }
 
 /* --- Reset ---------------------------------------------------------------- */
@@ -124,10 +182,10 @@ body::before {
   inset: 0;
   z-index: -2;
   background-image:
-    linear-gradient(rgb(255 255 255 / 2.2%) 1px, transparent 1px),
-    linear-gradient(90deg, rgb(255 255 255 / 2.2%) 1px, transparent 1px);
-  background-size: 56px 56px;
-  mask-image: linear-gradient(to bottom, black, transparent 72%);
+    linear-gradient(rgb(255 255 255 / 2%) 1px, transparent 1px),
+    linear-gradient(90deg, rgb(255 255 255 / 2%) 1px, transparent 1px);
+  background-size: 48px 48px;
+  mask-image: linear-gradient(to bottom, black, transparent 68%);
 }
 
 html[lang="hi"] body {
@@ -197,12 +255,29 @@ ul {
 }
 
 .section {
+  position: relative;
   padding-block: clamp(56px, 8vw, 96px);
   border-top: 1px solid var(--line);
 }
 
+/* A short ember rule marks the start of every section — the one piece of
+   chrome that tells you where you are in a long scroll. */
+.section::after {
+  content: "";
+  position: absolute;
+  top: -1px;
+  left: 0;
+  width: min(180px, 28%);
+  height: 2px;
+  background: var(--accent);
+}
+
 .section--flush {
   border-top: 0;
+}
+
+.section--flush::after {
+  display: none;
 }
 
 /* --- Typography helpers --------------------------------------------------- */
@@ -230,8 +305,14 @@ ul {
 }
 
 .h-section {
-  font-size: clamp(1.8rem, 4.2vw, 2.9rem);
+  max-width: 20ch;
   margin-bottom: var(--space-md);
+  font-family: var(--font-display);
+  font-size: clamp(2rem, 5vw, 3.4rem);
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  line-height: 0.98;
+  text-transform: uppercase;
 }
 
 .lead {
@@ -255,16 +336,17 @@ ul {
   min-height: 48px;
   padding: 0 var(--space-lg);
   border: 1.5px solid transparent;
-  border-radius: var(--radius-pill);
+  border-radius: var(--radius-sm);
   font-size: 0.95rem;
-  font-weight: 500;
+  font-weight: 600;
   text-decoration: none;
   cursor: pointer;
   transition:
     transform var(--dur) var(--ease),
     background-color var(--dur) var(--ease),
     border-color var(--dur) var(--ease),
-    color var(--dur) var(--ease);
+    color var(--dur) var(--ease),
+    box-shadow var(--dur) var(--ease);
 }
 
 .btn:hover {
@@ -278,12 +360,13 @@ ul {
 .btn--primary {
   background: var(--accent);
   color: var(--accent-ink);
+  clip-path: var(--cut-md);
   font-weight: 700;
 }
 
 .btn--primary:hover {
   transform: translateY(-2px);
-  box-shadow: 0 8px 24px rgb(34 211 238 / 22%);
+  box-shadow: 0 10px 28px var(--accent-glow);
 }
 
 .btn--ghost {
@@ -304,9 +387,15 @@ ul {
   top: 0;
   z-index: 50;
   padding-top: var(--safe-t);
-  background: rgb(8 9 12 / 82%);
+  background: rgb(10 10 15 / 82%);
   backdrop-filter: blur(14px) saturate(140%);
   border-bottom: 1px solid var(--line);
+  transition: border-color var(--dur) var(--ease);
+}
+
+/* Once the page has scrolled, the header picks up an ember hairline. */
+.header.is-scrolled {
+  border-bottom-color: var(--accent-line);
 }
 
 .header__inner {
@@ -337,9 +426,9 @@ ul {
   place-items: center;
   width: 38px;
   height: 38px;
-  border-radius: 11px;
   background: var(--accent);
   color: var(--accent-ink);
+  clip-path: var(--cut-sm);
   font-family: var(--font-m);
   font-size: 0.9rem;
   font-weight: 700;
@@ -347,7 +436,10 @@ ul {
 }
 
 .brand__name {
-  font-size: 1.05rem;
+  font-family: var(--font-display);
+  font-size: 1.28rem;
+  letter-spacing: 0.01em;
+  text-transform: uppercase;
   white-space: nowrap;
 }
 
@@ -410,7 +502,10 @@ ul {
   min-width: 44px;
   padding: 6px 0;
   color: var(--fg-2);
-  font-size: 0.92rem;
+  font-family: var(--font-m);
+  font-size: 0.76rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
   text-decoration: none;
 }
 
@@ -439,7 +534,7 @@ ul {
   min-height: 44px;
   padding: 0 var(--space-md);
   border: 1px solid var(--line-2);
-  border-radius: var(--radius-pill);
+  border-radius: var(--radius-sm);
   background: transparent;
   color: var(--fg-2);
   font-family: var(--font-m);
@@ -448,7 +543,8 @@ ul {
   cursor: pointer;
   transition:
     border-color var(--dur) var(--ease),
-    color var(--dur) var(--ease);
+    color var(--dur) var(--ease),
+    background-color var(--dur) var(--ease);
 }
 
 .lang-toggle:hover {
@@ -456,35 +552,77 @@ ul {
   color: var(--accent);
 }
 
+.lang-toggle[aria-pressed="true"] {
+  border-color: var(--accent);
+  background: var(--accent-dim);
+  color: var(--accent);
+}
+
 /* --- Hero ----------------------------------------------------------------- */
 
 .hero {
   position: relative;
-  padding-block: clamp(48px, 9vw, 104px) clamp(40px, 6vw, 72px);
+  padding-block: clamp(40px, 7vw, 84px) clamp(40px, 6vw, 72px);
   overflow: hidden;
 }
 
+/* The one gradient in the view: an ember bloom behind the board. */
 .hero::after {
   content: "";
   position: absolute;
-  top: -30%;
-  right: -10%;
+  top: -28%;
+  right: -12%;
   z-index: -1;
-  width: 620px;
-  height: 620px;
+  width: 720px;
+  height: 720px;
   border-radius: 50%;
-  background: radial-gradient(circle, rgb(34 211 238 / 13%), transparent 62%);
+  background: radial-gradient(circle, rgb(255 107 26 / 14%), transparent 64%);
   pointer-events: none;
 }
 
+.hero__grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.25fr) minmax(0, 0.75fr);
+  gap: clamp(28px, 4vw, 56px);
+  align-items: start;
+}
+
 .hero__title {
-  max-width: 17ch;
+  max-width: 16ch;
   margin-bottom: var(--space-md);
-  font-size: clamp(2.4rem, 7vw, 4.4rem);
+  font-family: var(--font-display);
+  font-size: clamp(2.7rem, 7.4vw, 5.2rem);
+  font-weight: 700;
+  letter-spacing: -0.015em;
+  line-height: 0.94;
+  text-transform: uppercase;
+}
+
+/* The highlighted word gets a rule drawn under it as the hero lands. */
+.hero__title .hl {
+  position: relative;
+  display: inline-block;
+}
+
+.hero__title .hl::after {
+  content: "";
+  position: absolute;
+  inset-inline: 0;
+  bottom: 0.06em;
+  height: 0.1em;
+  background: var(--accent);
+  clip-path: var(--cut-sm);
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform var(--dur-slow) var(--ease) 0.25s;
+}
+
+.js .hero__title.in .hl::after {
+  transform: scaleX(1);
 }
 
 .hero__sub {
-  max-width: 56ch;
+  max-width: 54ch;
   margin-bottom: var(--space-lg);
   color: var(--fg-2);
   font-size: clamp(1.02rem, 1.6vw, 1.16rem);
@@ -496,11 +634,129 @@ ul {
   gap: var(--space-md);
 }
 
+/* --- The board (hero record panel) ---------------------------------------- */
+
+.board {
+  position: relative;
+  padding: var(--space-lg);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-card);
+  background: var(--card);
+  box-shadow: 0 24px 60px rgb(0 0 0 / 45%);
+}
+
+.board__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-sm);
+  margin-bottom: var(--space-lg);
+  padding-bottom: var(--space-md);
+  border-bottom: 1px solid var(--line);
+  font-family: var(--font-m);
+  font-size: 0.68rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.board__tag {
+  color: var(--accent);
+}
+
+/* The season label sits on the right of the board head. The word comes
+   from the dictionary, the year range from the archive itself. */
+.board__season {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 6px;
+  text-align: end;
+}
+
+.board__season-value {
+  color: var(--fg-2);
+  font-variant-numeric: tabular-nums;
+}
+
+.board__id {
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+  margin-bottom: var(--space-lg);
+}
+
+.board__mark {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 58px;
+  height: 58px;
+  background: var(--accent);
+  color: var(--accent-ink);
+  clip-path: var(--cut-md);
+  font-family: var(--font-m);
+  font-size: 1.1rem;
+  font-weight: 700;
+}
+
+.board__name {
+  display: block;
+  font-family: var(--font-display);
+  font-size: 1.6rem;
+  letter-spacing: 0.01em;
+  line-height: 1.1;
+  text-transform: uppercase;
+}
+
+.board__city {
+  display: block;
+  color: var(--muted);
+  font-family: var(--font-m);
+  font-size: 0.72rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.board__stats {
+  display: grid;
+  gap: 1px;
+  margin: 0;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: var(--line);
+  overflow: hidden;
+}
+
+.board__stats > div {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-md);
+  padding: 11px var(--space-md);
+  background: var(--bg-2);
+}
+
+.board__stats dt {
+  color: var(--muted);
+  font-family: var(--font-m);
+  font-size: 0.7rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.board__stats dd {
+  margin: 0;
+  font-family: var(--font-m);
+  font-size: 1.06rem;
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+}
+
 /* --- Stats ---------------------------------------------------------------- */
 
 .stats {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 1px;
   margin-top: clamp(36px, 5vw, 56px);
   overflow: hidden;
@@ -510,8 +766,29 @@ ul {
 }
 
 .stat {
+  position: relative;
   padding: var(--space-lg);
   background: var(--bg-2);
+  transition: background-color var(--dur) var(--ease);
+}
+
+.stat:hover {
+  background: var(--card);
+}
+
+/* The four headline tiles carry the accent rule and the big number. */
+.stat--feature {
+  background: var(--card);
+}
+
+.stat--feature::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 42%;
+  height: 2px;
+  background: var(--accent);
 }
 
 .stat__label {
@@ -527,11 +804,15 @@ ul {
 .stat__value {
   display: block;
   font-family: var(--font-m);
-  font-size: clamp(1.5rem, 3vw, 2rem);
+  font-size: clamp(1.4rem, 2.6vw, 1.8rem);
   font-variant-numeric: tabular-nums;
   font-weight: 700;
   letter-spacing: -0.03em;
   line-height: 1.1;
+}
+
+.stat--feature .stat__value {
+  font-size: clamp(1.8rem, 3.4vw, 2.4rem);
 }
 
 .stat__value--accent {
@@ -555,6 +836,7 @@ ul {
   font-size: 0.72rem;
   letter-spacing: 0.14em;
   text-transform: uppercase;
+  white-space: nowrap;
 }
 
 .form-strip__row {
@@ -568,28 +850,83 @@ ul {
   width: 34px;
   height: 34px;
   border: 1px solid var(--line-2);
-  border-radius: 10px;
+  border-radius: 8px;
   font-family: var(--font-m);
   font-size: 0.85rem;
   font-weight: 700;
+  animation: pop var(--dur-med) var(--ease-out) both;
+}
+
+/* Each dot lands a beat after the one before it, so the strip reads as a
+   results ticker rather than a static row of letters. */
+.form-dot:nth-child(1) {
+  animation-delay: 40ms;
+}
+
+.form-dot:nth-child(2) {
+  animation-delay: 90ms;
+}
+
+.form-dot:nth-child(3) {
+  animation-delay: 140ms;
+}
+
+.form-dot:nth-child(4) {
+  animation-delay: 190ms;
+}
+
+.form-dot:nth-child(5) {
+  animation-delay: 240ms;
+}
+
+.form-dot:nth-child(6) {
+  animation-delay: 290ms;
+}
+
+.form-dot:nth-child(7) {
+  animation-delay: 340ms;
+}
+
+.form-dot:nth-child(8) {
+  animation-delay: 390ms;
+}
+
+.form-dot:nth-child(9) {
+  animation-delay: 440ms;
+}
+
+.form-dot:nth-child(10) {
+  animation-delay: 490ms;
 }
 
 .form-dot[data-r="W"] {
-  border-color: rgb(52 211 153 / 40%);
-  background: rgb(52 211 153 / 12%);
+  border-color: rgb(61 220 132 / 40%);
+  background: rgb(61 220 132 / 12%);
   color: var(--win);
 }
 
 .form-dot[data-r="L"] {
-  border-color: rgb(248 113 113 / 40%);
-  background: rgb(248 113 113 / 12%);
+  border-color: rgb(255 90 90 / 40%);
+  background: rgb(255 90 90 / 12%);
   color: var(--loss);
 }
 
 .form-dot[data-r="D"] {
-  border-color: rgb(251 191 36 / 40%);
-  background: rgb(251 191 36 / 12%);
+  border-color: rgb(154 163 184 / 40%);
+  background: rgb(154 163 184 / 12%);
   color: var(--draw);
+}
+
+@keyframes pop {
+  from {
+    opacity: 0%;
+    transform: scale(0.6) translateY(6px);
+  }
+
+  to {
+    opacity: 100%;
+    transform: none;
+  }
 }
 
 /* --- Demo banner ---------------------------------------------------------- */
@@ -600,9 +937,9 @@ ul {
   gap: var(--space-md);
   margin-top: var(--space-lg);
   padding: var(--space-md) var(--space-lg);
-  border: 1px solid rgb(251 191 36 / 34%);
+  border: 1px solid rgb(154 163 184 / 34%);
   border-radius: var(--radius-sm);
-  background: rgb(251 191 36 / 8%);
+  background: rgb(154 163 184 / 8%);
   color: var(--fg-2);
   font-size: 0.92rem;
 }
@@ -623,11 +960,13 @@ ul {
   top: calc(var(--header-h) + var(--safe-t));
   z-index: 40;
   margin-bottom: var(--space-xl);
-  padding: var(--space-md);
+  padding: var(--space-md) var(--space-lg);
   border: 1px solid var(--line);
+  border-left: 2px solid var(--accent);
   border-radius: var(--radius-card);
-  background: rgb(12 14 19 / 94%);
+  background: rgb(16 16 23 / 94%);
   backdrop-filter: blur(12px);
+  box-shadow: 0 18px 40px rgb(0 0 0 / 40%);
 }
 
 .filters__row {
@@ -650,31 +989,42 @@ ul {
 }
 
 .chip {
+  /* The border is painted with a background gradient rather than a border
+     property, so the 1px line follows the cut corner instead of being
+     clipped away by it. */
+  --chip-bg: rgb(255 255 255 / 3%);
+  --chip-line: var(--line-2);
+
   min-height: 44px;
-  padding: 0 var(--space-md);
-  border: 1px solid var(--line-2);
-  border-radius: var(--radius-pill);
-  background: transparent;
+  padding: 0 14px;
+  border: 1px solid transparent;
+  background:
+    linear-gradient(var(--chip-bg), var(--chip-bg)) padding-box,
+    linear-gradient(var(--chip-line), var(--chip-line)) border-box;
+  clip-path: var(--cut-sm);
   color: var(--fg-2);
   font-family: var(--font-m);
-  font-size: 0.8rem;
+  font-size: 0.78rem;
   letter-spacing: 0.04em;
   cursor: pointer;
   transition:
-    border-color var(--dur) var(--ease),
     color var(--dur) var(--ease),
-    background-color var(--dur) var(--ease);
+    transform var(--dur) var(--ease);
 }
 
 .chip:hover {
-  border-color: var(--accent);
+  --chip-bg: rgb(255 255 255 / 7%);
+  --chip-line: var(--accent);
+
   color: var(--fg);
 }
 
 .chip[aria-pressed="true"] {
-  border-color: var(--accent);
-  background: var(--accent-dim);
+  --chip-bg: var(--accent-dim);
+  --chip-line: var(--accent);
+
   color: var(--accent);
+  font-weight: 700;
 }
 
 .search {
@@ -735,12 +1085,14 @@ ul {
   cursor: pointer;
   transition:
     border-color var(--dur) var(--ease),
-    color var(--dur) var(--ease);
+    color var(--dur) var(--ease),
+    transform var(--dur) var(--ease);
 }
 
 .filters__reset:hover {
   border-color: var(--accent);
   color: var(--accent);
+  transform: translateY(-1px);
 }
 
 /* --- Match list ----------------------------------------------------------- */
@@ -753,36 +1105,137 @@ ul {
 
 .match {
   position: relative;
+  display: grid;
+  grid-template-columns: 62px minmax(0, 1fr);
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-card);
+  background: var(--card);
+  animation: card-in var(--dur-med) var(--ease-out) both;
+  transition:
+    transform var(--dur) var(--ease),
+    border-color var(--dur) var(--ease),
+    background-color var(--dur) var(--ease),
+    box-shadow var(--dur) var(--ease);
+}
+
+/* The cards land in sequence, so a filtered list re-sorts with motion
+   instead of snapping. */
+.match:nth-child(1) {
+  animation-delay: 0ms;
+}
+
+.match:nth-child(2) {
+  animation-delay: 45ms;
+}
+
+.match:nth-child(3) {
+  animation-delay: 90ms;
+}
+
+.match:nth-child(4) {
+  animation-delay: 135ms;
+}
+
+.match:nth-child(5) {
+  animation-delay: 180ms;
+}
+
+.match:nth-child(6) {
+  animation-delay: 225ms;
+}
+
+.match:nth-child(7) {
+  animation-delay: 270ms;
+}
+
+.match:nth-child(8) {
+  animation-delay: 315ms;
+}
+
+.match:nth-child(9) {
+  animation-delay: 360ms;
+}
+
+.match:nth-child(10) {
+  animation-delay: 405ms;
+}
+
+@keyframes card-in {
+  from {
+    opacity: 0%;
+    transform: translateY(18px) scale(0.99);
+  }
+
+  to {
+    opacity: 100%;
+    transform: none;
+  }
+}
+
+.match:hover {
+  transform: translateY(-4px);
+  border-color: var(--line-2);
+  background: var(--card-2);
+  box-shadow: 0 18px 40px rgb(0 0 0 / 45%);
+}
+
+/* A solid scan band sweeps across the card on hover — flat colour, no
+   gradient, so it reads as a broadcast wipe rather than decoration. */
+.match::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  z-index: 0;
+  width: 40%;
+  background: rgb(255 107 26 / 6%);
+  transform: translateX(-140%) skewX(-18deg);
+  transition: transform var(--dur-slow) var(--ease);
+  pointer-events: none;
+}
+
+.match:hover::after {
+  transform: translateX(340%) skewX(-18deg);
+}
+
+/* The result flag: a notched, tinted slab on the leading edge. */
+.match__result {
+  display: grid;
+  place-items: center;
+  min-height: 62px;
+  background: var(--flag-bg);
+  clip-path: var(--cut-md);
+  color: var(--flag-fg);
+  font-family: var(--font-m);
+  font-size: 1.45rem;
+  font-weight: 700;
+}
+
+.match[data-result="W"] .match__result {
+  --flag-bg: rgb(61 220 132 / 13%);
+  --flag-fg: var(--win);
+}
+
+.match[data-result="L"] .match__result {
+  --flag-bg: rgb(255 90 90 / 13%);
+  --flag-fg: var(--loss);
+}
+
+.match[data-result="D"] .match__result {
+  --flag-bg: rgb(154 163 184 / 13%);
+  --flag-fg: var(--draw);
+}
+
+.match__body {
+  position: relative;
+  z-index: 1;
   display: flex;
   flex-direction: column;
   gap: var(--space-md);
   padding: var(--space-lg);
-  border: 1px solid var(--line);
-  border-radius: var(--radius-card);
-  background: var(--card);
-  transition:
-    transform var(--dur) var(--ease),
-    border-color var(--dur) var(--ease),
-    background-color var(--dur) var(--ease);
-}
-
-.match:hover {
-  transform: translateY(-3px);
-  border-color: var(--line-2);
-  background: var(--card-2);
-}
-
-/* A win gets a subtle accent edge. Loss and draw stay neutral so the
-   colour only appears when the team actually took the game. */
-.match[data-result="W"]::before {
-  content: "";
-  position: absolute;
-  inset-block: 14px;
-  inset-inline-start: 0;
-  width: 3px;
-  border-radius: 0 3px 3px 0;
-  background: var(--accent);
-  opacity: 75%;
+  min-width: 0;
 }
 
 .match__head {
@@ -795,7 +1248,7 @@ ul {
 .match__date {
   color: var(--muted);
   font-family: var(--font-m);
-  font-size: 0.76rem;
+  font-size: 0.74rem;
   letter-spacing: 0.08em;
   text-transform: uppercase;
 }
@@ -805,57 +1258,32 @@ ul {
   align-items: center;
   min-height: 24px;
   padding: 0 9px;
-  border: 1px solid var(--line-2);
-  border-radius: 7px;
+  clip-path: var(--cut-sm);
   font-family: var(--font-m);
-  font-size: 0.68rem;
-  font-weight: 500;
+  font-size: 0.66rem;
+  font-weight: 600;
   letter-spacing: 0.1em;
   text-transform: uppercase;
   white-space: nowrap;
 }
 
 .badge--mode {
-  border-color: var(--accent-line);
+  background: var(--accent-dim);
   color: var(--accent);
 }
 
 .badge--event {
+  background: rgb(255 255 255 / 5%);
   color: var(--muted);
 }
 
-.match__result {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-width: 34px;
-  min-height: 26px;
-  margin-inline-start: auto;
-  padding: 0 8px;
-  border-radius: 8px;
-  font-family: var(--font-m);
-  font-size: 0.8rem;
-  font-weight: 700;
-}
-
-.match__result[data-r="W"] {
-  background: rgb(52 211 153 / 14%);
-  color: var(--win);
-}
-
-.match__result[data-r="L"] {
-  background: rgb(248 113 113 / 14%);
-  color: var(--loss);
-}
-
-.match__result[data-r="D"] {
-  background: rgb(251 191 36 / 14%);
-  color: var(--draw);
-}
-
 .match__event {
-  font-size: 1.16rem;
-  letter-spacing: -0.02em;
+  font-family: var(--font-display);
+  font-size: 1.32rem;
+  font-weight: 600;
+  letter-spacing: 0.005em;
+  line-height: 1.15;
+  text-transform: uppercase;
 }
 
 .match__scoreline {
@@ -863,48 +1291,55 @@ ul {
   align-items: baseline;
   gap: var(--space-sm);
   flex-wrap: wrap;
-  padding: var(--space-md) 0;
+  padding: var(--space-sm) 0;
   border-block: 1px solid var(--line);
 }
 
 .match__score {
-  font-family: var(--font-m);
-  font-size: 1.5rem;
+  font-family: var(--font-display);
+  font-size: clamp(1.7rem, 3.4vw, 2.3rem);
   font-variant-numeric: tabular-nums;
   font-weight: 700;
-  letter-spacing: -0.02em;
+  letter-spacing: 0.01em;
+  line-height: 1;
 }
 
 .match__vs {
   color: var(--muted);
   font-family: var(--font-m);
-  font-size: 0.75rem;
-  letter-spacing: 0.1em;
+  font-size: 0.72rem;
+  letter-spacing: 0.14em;
   text-transform: uppercase;
 }
 
 .match__opponent {
-  color: var(--fg-2);
+  color: var(--fg);
   font-size: 0.98rem;
-  font-weight: 500;
+  font-weight: 600;
 }
 
 .match__meta {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: var(--space-md);
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 1px;
   margin: 0;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: var(--line);
 }
 
 .match__meta div {
   min-width: 0;
+  padding: 9px 10px;
+  background: var(--bg-2);
 }
 
 .match__meta dt {
   margin-bottom: 3px;
   color: var(--muted);
   font-family: var(--font-m);
-  font-size: 0.68rem;
+  font-size: 0.62rem;
   letter-spacing: 0.12em;
   text-transform: uppercase;
 }
@@ -912,7 +1347,7 @@ ul {
 .match__meta dd {
   margin: 0;
   font-family: var(--font-m);
-  font-size: 0.92rem;
+  font-size: 0.85rem;
   font-variant-numeric: tabular-nums;
   overflow-wrap: anywhere;
 }
@@ -920,7 +1355,7 @@ ul {
 .match__notes {
   margin: 0;
   color: var(--muted);
-  font-size: 0.9rem;
+  font-size: 0.88rem;
   line-height: 1.55;
 }
 
@@ -928,11 +1363,12 @@ ul {
   display: inline-block;
   margin-inline-start: var(--space-sm);
   padding: 1px 7px;
-  border: 1px solid rgb(251 191 36 / 40%);
-  border-radius: 6px;
+  background: rgb(154 163 184 / 14%);
+  clip-path: var(--cut-sm);
   color: var(--draw);
   font-family: var(--font-m);
-  font-size: 0.62rem;
+  font-size: 0.6rem;
+  font-weight: 600;
   letter-spacing: 0.1em;
   text-transform: uppercase;
   vertical-align: middle;
@@ -949,7 +1385,11 @@ ul {
 
 .state__title {
   margin-bottom: var(--space-sm);
-  font-size: 1.1rem;
+  font-family: var(--font-display);
+  font-size: 1.4rem;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  text-transform: uppercase;
 }
 
 .state__body {
@@ -968,7 +1408,7 @@ ul {
 }
 
 .skeleton__card {
-  height: 210px;
+  height: 230px;
   border: 1px solid var(--line);
   border-radius: var(--radius-card);
   background: linear-gradient(
@@ -978,7 +1418,7 @@ ul {
     var(--card) 70%
   );
   background-size: 220% 100%;
-  animation: shimmer var(--dur-slow) linear infinite;
+  animation: shimmer var(--dur-slow) linear var(--iter);
 }
 
 @keyframes shimmer {
@@ -1061,18 +1501,20 @@ ul {
   min-height: 48px;
   padding: 0 var(--space-lg);
   border: 1px solid var(--line-2);
-  border-radius: var(--radius-pill);
+  border-radius: var(--radius-sm);
   color: var(--fg);
   font-size: 0.93rem;
   text-decoration: none;
   transition:
     border-color var(--dur) var(--ease),
     color var(--dur) var(--ease),
-    transform var(--dur) var(--ease);
+    transform var(--dur) var(--ease),
+    background-color var(--dur) var(--ease);
 }
 
 .contact__item:hover {
   border-color: var(--accent);
+  background: var(--accent-dim);
   color: var(--accent);
   text-decoration: none;
   transform: translateY(-2px);
@@ -1081,9 +1523,20 @@ ul {
 /* --- Footer --------------------------------------------------------------- */
 
 .footer {
+  position: relative;
   padding-block: var(--space-xl) var(--space-lg);
   border-top: 1px solid var(--line);
   background: var(--bg-2);
+}
+
+.footer::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: min(220px, 34%);
+  height: 2px;
+  background: var(--accent);
 }
 
 .footer__inner {
@@ -1116,11 +1569,141 @@ ul {
      which is under the 44px minimum target. */
   min-width: 44px;
   color: var(--fg-2);
-  font-size: 0.88rem;
+  font-family: var(--font-m);
+  font-size: 0.78rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
 }
 
 .footer__link:hover {
   color: var(--accent);
+}
+
+/* --- Modes rail ----------------------------------------------------------- */
+/*
+   The three Free Fire MAX competitive modes, drawn as a row of cards.
+   Each card is a link that filters the archive to that mode, so the rail
+   is navigation, not decoration.
+*/
+
+.modes {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--space-md);
+  margin-top: clamp(28px, 4vw, 44px);
+}
+
+.mode {
+  position: relative;
+  display: block;
+  overflow: hidden;
+  padding: var(--space-lg);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-card);
+  background: var(--card);
+  color: inherit;
+  text-decoration: none;
+  transition:
+    transform var(--dur) var(--ease),
+    border-color var(--dur) var(--ease),
+    background-color var(--dur) var(--ease),
+    box-shadow var(--dur) var(--ease);
+}
+
+.mode:hover {
+  transform: translateY(-4px);
+  border-color: var(--accent-line);
+  background: var(--card-2);
+  box-shadow: 0 18px 40px rgb(0 0 0 / 45%);
+  text-decoration: none;
+}
+
+/* The mode number is set huge and outlined — a broadcast lower-third
+   index, not a heading. */
+.mode__index {
+  position: absolute;
+  top: -6px;
+  right: 10px;
+  color: transparent;
+  font-family: var(--font-display);
+  font-size: 4.4rem;
+  font-weight: 700;
+  line-height: 1;
+  -webkit-text-stroke: 1px var(--line-2);
+  pointer-events: none;
+}
+
+.mode__name {
+  position: relative;
+  display: block;
+  margin-bottom: var(--space-sm);
+  font-family: var(--font-display);
+  font-size: 1.6rem;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  line-height: 1.05;
+  text-transform: uppercase;
+}
+
+.mode__desc {
+  position: relative;
+  display: block;
+  max-width: 30ch;
+  margin-bottom: var(--space-md);
+  color: var(--muted);
+  font-size: 0.88rem;
+  line-height: 1.55;
+}
+
+.mode__stat {
+  position: relative;
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-sm);
+  padding-top: var(--space-md);
+  border-top: 1px solid var(--line);
+  font-family: var(--font-m);
+  font-size: 0.74rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.mode__stat b {
+  font-family: var(--font-m);
+  font-size: 1.15rem;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.02em;
+  color: var(--accent);
+}
+
+/* The second stat line sits directly under the first — no rule, no
+   padding — so the two read as one block of numbers. */
+.mode__stat--plain {
+  margin-top: 0;
+  padding-top: 0;
+  border-top: 0;
+}
+
+.mode__go {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: var(--space-md);
+  color: var(--accent);
+  font-family: var(--font-m);
+  font-size: 0.72rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.mode__go svg {
+  transition: transform var(--dur) var(--ease);
+}
+
+.mode:hover .mode__go svg {
+  transform: translateX(4px);
 }
 
 /* --- Filters labels ------------------------------------------------------- */
@@ -1154,8 +1737,11 @@ ul {
 
 .breakdown__title {
   margin-bottom: var(--space-md);
-  font-size: 1.05rem;
-  letter-spacing: -0.01em;
+  font-family: var(--font-display);
+  font-size: 1.24rem;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  text-transform: uppercase;
 }
 
 .breakdown__row + .breakdown__row {
@@ -1177,12 +1763,15 @@ ul {
 .breakdown__val {
   margin-inline-start: auto;
   color: var(--muted);
-  font-size: 0.76rem;
+  font-size: 0.74rem;
   white-space: nowrap;
 }
 
+/* The bar is a split: the wins take the win colour, the losses take the
+   loss colour, and whatever is left is the neutral remainder. */
 .breakdown__bar {
-  height: 6px;
+  display: flex;
+  height: 8px;
   overflow: hidden;
   border-radius: 999px;
   background: var(--card-2);
@@ -1190,11 +1779,49 @@ ul {
 
 .breakdown__bar span {
   display: block;
-  width: var(--w, 0%);
   height: 100%;
-  border-radius: 999px;
-  background: var(--accent);
-  transition: width var(--dur-med) var(--ease);
+  flex: 0 0 var(--w, 0%);
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform var(--dur-slow) var(--ease);
+}
+
+/* Each segment wipes in after the one before it, so the bar reads as a
+   single sweep across the record rather than four separate pops. */
+.breakdown__bar span:nth-child(1) {
+  transition-delay: 0ms;
+}
+
+.breakdown__bar span:nth-child(2) {
+  transition-delay: 110ms;
+}
+
+.breakdown__bar span:nth-child(3) {
+  transition-delay: 220ms;
+}
+
+.breakdown__bar span:nth-child(4) {
+  transition-delay: 330ms;
+}
+
+.js .breakdown.in .breakdown__bar span {
+  transform: scaleX(1);
+}
+
+.breakdown__bar-win {
+  background: var(--win);
+}
+
+.breakdown__bar-loss {
+  background: var(--loss);
+}
+
+.breakdown__bar-draw {
+  background: var(--draw);
+}
+
+.breakdown__bar-rest {
+  background: var(--line-2);
 }
 
 /* --- Utilities ------------------------------------------------------------ */
@@ -1231,7 +1858,7 @@ ul {
 
 .js .rv {
   opacity: 0%;
-  transform: translateY(24px);
+  transform: translateY(22px);
 }
 
 .js .rv.in {
@@ -1242,6 +1869,42 @@ ul {
     transform var(--dur-med) var(--ease);
 }
 
+/* A wipe is a broadcast graphic move: the block is hidden behind a hard
+   edge that sweeps across, instead of fading up from nowhere.
+
+   The cover is a pseudo-element, NOT a clip-path on the block itself.
+   A clip-path that hides the block collapses its VISIBLE area to zero,
+   so the IntersectionObserver never reports it as intersecting and the
+   reveal would never fire — the element would stay invisible forever.
+   The observer needs an honest box to watch, so the sweep is painted on
+   top of the content instead of cutting it away. */
+.js .rv--wipe {
+  position: relative;
+  overflow: hidden;
+  opacity: 100%;
+  transform: none;
+}
+
+.js .rv--wipe::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  background: var(--bg);
+  transform: translateX(0);
+  transition: transform var(--dur-slow) var(--ease-out);
+}
+
+.js .rv--wipe.in {
+  opacity: 100%;
+  transform: none;
+  transition: none;
+}
+
+.js .rv--wipe.in::before {
+  transform: translateX(101%);
+}
+
 /* --- Scroll progress ------------------------------------------------------ */
 
 .progress {
@@ -1250,19 +1913,28 @@ ul {
   left: 0;
   z-index: 60;
   width: 100%;
-  height: 2px;
+  height: 3px;
   transform: scaleX(0);
   transform-origin: left;
   background: var(--accent);
+  box-shadow: 0 0 12px var(--accent-glow);
   pointer-events: none;
 }
 
 /* --- Responsive ----------------------------------------------------------- */
 
 @media (width <= 1060px) {
+  .hero__grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
   .matches,
   .skeleton {
     grid-template-columns: minmax(0, 1fr);
+  }
+
+  .modes {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   .about {
@@ -1270,7 +1942,7 @@ ul {
   }
 
   .stats {
-    grid-template-columns: repeat(2, 1fr);
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   .breakdowns {
@@ -1293,7 +1965,7 @@ ul {
     margin-inline-start: 0;
     padding: var(--space-sm) var(--space-md) var(--space-md);
     border-bottom: 1px solid var(--line);
-    background: rgb(8 9 12 / 98%);
+    background: rgb(10 10 15 / 98%);
     backdrop-filter: blur(14px);
   }
 
@@ -1305,7 +1977,7 @@ ul {
     display: block;
     padding: 14px 0;
     border-bottom: 1px solid var(--line);
-    font-size: 1rem;
+    font-size: 0.9rem;
   }
 
   .nav__link::after {
@@ -1332,6 +2004,10 @@ ul {
     padding: var(--space-md);
   }
 
+  .modes {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
   .filters__count {
     width: 100%;
     margin-inline-start: 0;
@@ -1341,9 +2017,21 @@ ul {
     flex: 1;
   }
 
+  .match {
+    grid-template-columns: 46px minmax(0, 1fr);
+  }
+
+  .match__result {
+    min-height: 46px;
+    font-size: 1.1rem;
+  }
+
+  .match__body {
+    padding: var(--space-md);
+  }
+
   .match__meta {
-    grid-template-columns: minmax(0, 1fr);
-    gap: var(--space-sm);
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   .hero__actions .btn {
@@ -1368,6 +2056,8 @@ ul {
     --dur: 0.01ms;
     --dur-med: 0.01ms;
     --dur-slow: 0.01ms;
+    --stagger: 0ms;
+    --iter: 1;
   }
 
   html {
@@ -1377,5 +2067,15 @@ ul {
   .js .rv {
     opacity: 100%;
     transform: none;
+  }
+
+  /* A wipe that never completes would keep the cover parked over the
+     content, so the cover is removed entirely. */
+  .js .rv--wipe::before {
+    display: none;
+  }
+
+  .breakdown__bar span {
+    transform: scaleX(1);
   }
 }

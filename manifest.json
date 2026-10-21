@@ -6,10 +6,13 @@
   "scope": "./",
   "display": "standalone",
   "orientation": "portrait",
-  "background_color": "#08090c",
-  "theme_color": "#08090c",
+  "background_color": "#0a0a0f",
+  "theme_color": "#0a0a0f",
   "lang": "en",
-  "categories": ["sports", "games"],
+  "categories": [
+    "sports",
+    "games"
+  ],
   "icons": [
     {
       "src": "assets/icon-192.png",

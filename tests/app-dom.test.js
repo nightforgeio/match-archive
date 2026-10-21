@@ -117,10 +117,16 @@ function makeWindow(opts) {
   ok("the error state is hidden", doc.getElementById("errorState").hidden);
   ok("the empty state is hidden", doc.getElementById("emptyState").hidden);
   ok("the result count is shown", T("resultCount").indexOf("8") === 0, T("resultCount"));
-  ok("the hero shows the match count", T("heroMatches") === "8", T("heroMatches"));
-  ok("the hero shows the win count", T("heroWins") === "6", T("heroWins"));
-  ok("the hero shows a win rate", /%/.test(T("heroWinRate")), T("heroWinRate"));
-  ok("the hero shows the prize money", T("heroPrize").indexOf("₹") === 0, T("heroPrize"));
+  // The headline numbers live in the board panel in the hero.
+  ok("the board shows the match count", T("boardMatches") === "8", T("boardMatches"));
+  ok("the board shows the win count", T("boardWins") === "6", T("boardWins"));
+  ok("the board shows a win rate", /%/.test(T("boardWinRate")), T("boardWinRate"));
+  ok("the board shows the prize money", T("boardPrize").indexOf("₹") === 0, T("boardPrize"));
+  ok("the board shows the team name", T("boardName") === teamData.name, T("boardName"));
+  ok("the board shows the city", T("boardCity") === teamData.city, T("boardCity"));
+  // The season follows the archive: the records run from Dec 2025 to
+  // Feb 2026, so the board must show that window, not a fixed year.
+  ok("the board shows the season window", T("boardSeasonValue") === "2025–2026", T("boardSeasonValue"));
   ok("the recent form strip rendered", doc.querySelectorAll("#formRow .form-dot").length === 8);
   ok("the sample banner is visible while samples exist", !doc.getElementById("demoBanner").hidden);
   ok("the stats grid rendered", doc.querySelectorAll("#statsGrid .stat").length >= 12, doc.querySelectorAll("#statsGrid .stat").length);
@@ -132,6 +138,81 @@ function makeWindow(opts) {
     Array.from(doc.querySelectorAll("#breakdownModes .breakdown__key")).map((e) => e.textContent.trim()).join("|")
   );
   ok("the event breakdown rendered", doc.querySelectorAll("#breakdownEvents .breakdown__row").length > 0);
+
+  // =========================================================================
+  console.log("\n=== MODES RAIL ===");
+  // The rail is navigation, not decoration: each card filters the archive.
+  const modeCards = () => doc.querySelectorAll("#modeRail .mode");
+  ok("the mode rail rendered three cards", modeCards().length === 3, modeCards().length + " cards");
+  ok(
+    "the mode rail shows the full mode names",
+    Array.from(modeCards()).map((c) => c.querySelector(".mode__name").textContent.trim()).join("|") ===
+      "Clash Squad|Battle Royale|Lone Wolf",
+    Array.from(modeCards()).map((c) => c.querySelector(".mode__name").textContent.trim()).join("|")
+  );
+  ok(
+    "the mode rail cards carry a mode link",
+    Array.from(modeCards()).every((c) => c.getAttribute("data-mode-link")),
+    Array.from(modeCards()).map((c) => c.getAttribute("data-mode-link")).join("|")
+  );
+  ok(
+    "the mode rail shows a description for each mode",
+    Array.from(modeCards()).every((c) => c.querySelector(".mode__desc").textContent.trim().length > 10),
+    Array.from(modeCards()).map((c) => c.querySelector(".mode__desc").textContent.trim()).join(" | ")
+  );
+  ok(
+    "the mode rail shows played and won counts",
+    Array.from(modeCards()).every((c) => c.querySelectorAll(".mode__stat").length === 2),
+    Array.from(modeCards()).map((c) => c.querySelectorAll(".mode__stat").length).join("|")
+  );
+  // The Clash Squad record is four matches, two of them won.
+  {
+    const cs = doc.querySelector('#modeRail [data-mode-link="CS"]');
+    const stats = cs.querySelectorAll(".mode__stat b");
+    ok("the Clash Squad card shows the played count", stats[0].textContent.trim() === "4", stats[0].textContent.trim());
+    ok("the Clash Squad card shows the win count", stats[1].textContent.trim() === "2", stats[1].textContent.trim());
+  }
+
+  // =========================================================================
+  console.log("\n=== BREAKDOWN BAR ===");
+  // The bar is a split, not a single fill: the wins, the losses and the
+  // neutral remainder are separate segments.
+  {
+    const row = doc.querySelector("#breakdownModes .breakdown__row");
+    const bar = row.querySelector(".breakdown__bar");
+    ok("the breakdown bar has segments", bar.querySelectorAll("span").length >= 2, bar.querySelectorAll("span").length + " segments");
+    ok(
+      "the breakdown bar has a win segment",
+      bar.querySelector(".breakdown__bar-win") !== null
+    );
+    ok(
+      "the breakdown bar has a loss segment",
+      bar.querySelector(".breakdown__bar-loss") !== null
+    );
+    // The widest row fills the bar completely, so it has no remainder.
+    // A narrower row does — that is what makes the bars comparable.
+    const rows = Array.from(doc.querySelectorAll("#breakdownModes .breakdown__row"));
+    const withRest = rows.filter((r) => r.querySelector(".breakdown__bar-rest") !== null);
+    ok(
+      "a narrower breakdown row carries a neutral remainder",
+      withRest.length >= 1,
+      withRest.length + " of " + rows.length + " rows have a remainder"
+    );
+    // The remainder fills whatever the wins and losses did not take.
+    {
+      const narrow = withRest[0];
+      const segs = Array.from(narrow.querySelectorAll(".breakdown__bar span"));
+      const total = segs.reduce((sum, sp) => sum + parseFloat((/--w:\s*([\d.]+)%/.exec(sp.getAttribute("style") || "") || [0, 0])[1]), 0);
+      ok("the breakdown bar segments add up to 100%", Math.abs(total - 100) < 0.5, total.toFixed(2) + "%");
+    }
+    // The segments carry a width, so the bar is proportional rather than
+    // a fixed-width decoration.
+    ok(
+      "the breakdown segments carry a width",
+      Array.from(bar.querySelectorAll("span")).every((sp) => /--w:\s*[\d.]+%/.test(sp.getAttribute("style") || "")),
+      Array.from(bar.querySelectorAll("span")).map((sp) => sp.getAttribute("style")).join(" | ")
+    );
+  }
 
   // =========================================================================
   console.log("\n=== ORDERING & CONTENT ===");
@@ -163,6 +244,34 @@ function makeWindow(opts) {
   const chip = (group, value) =>
     doc.querySelector('#' + group + ' .chip[data-value="' + value + '"]');
   const click = (node) => node.dispatchEvent(new w.MouseEvent("click", { bubbles: true }));
+
+  // =========================================================================
+  console.log("\n=== MODE RAIL FILTERING ===");
+  // Clicking a mode card applies that mode as a filter and lands the
+  // visitor in the archive. It is a shortcut into the same list, not a
+  // separate view.
+  {
+    const cs = doc.querySelector('#modeRail [data-mode-link="CS"]');
+    click(cs);
+    await settle();
+    ok("a mode card filters the archive", cards().length === 4, cards().length + " cards");
+    ok(
+      "every visible card is that mode",
+      Array.from(cards()).every((c) => c.querySelector(".badge--mode").textContent.trim() === "Clash Squad")
+    );
+    ok(
+      "the mode chip follows the mode card",
+      chip("chipMode", "CS").getAttribute("aria-pressed") === "true"
+    );
+    // Clicking the same card again clears the filter.
+    click(doc.querySelector('#modeRail [data-mode-link="CS"]'));
+    await settle();
+    ok("clicking the same mode card clears the filter", cards().length === 8, cards().length + " cards");
+    ok(
+      "the mode chip is released",
+      chip("chipMode", "CS").getAttribute("aria-pressed") === "false"
+    );
+  }
 
   click(chip("chipMode", "CS"));
   await settle();
@@ -334,7 +443,9 @@ function makeWindow(opts) {
   ok("the CTA is translated", doc.querySelector(".hero__actions .btn--primary").textContent.trim() !== enCta);
   ok("the chips are rebuilt in Hindi", /[ऀ-ॿ]/.test(chip("chipMode", "").textContent));
   ok("the match cards survive the language switch", cards().length === 8, cards().length + " cards");
-  ok("the hero stats survive the language switch", T("heroMatches") === "8", T("heroMatches"));
+  ok("the board stats survive the language switch", T("boardMatches") === "8", T("boardMatches"));
+  ok("the board season survives the language switch", T("boardSeasonValue") === "2025–2026", T("boardSeasonValue"));
+  ok("the mode rail survives the language switch", doc.querySelectorAll("#modeRail .mode").length === 3, doc.querySelectorAll("#modeRail .mode").length + " mode cards");
   ok("the sample banner survives the language switch", !doc.getElementById("demoBanner").hidden);
   ok("the search label is translated", /[ऀ-ॿ]/.test(doc.querySelector('label[for="searchInput"]').textContent));
   ok("the nav label is translated", /[ऀ-ॿ]/.test(doc.getElementById("nav").getAttribute("aria-label")));
@@ -526,7 +637,7 @@ function makeWindow(opts) {
     const d3 = w3.document;
     ok("an empty archive renders no cards", d3.querySelectorAll("#matchList .match").length === 0);
     ok("an empty archive shows the empty state", !d3.getElementById("emptyState").hidden);
-    ok("an empty archive shows a zero match count", d3.getElementById("heroMatches").textContent.trim() === "0");
+    ok("an empty archive shows a zero match count", d3.getElementById("boardMatches").textContent.trim() === "0");
     ok("an empty archive does not error", d3.getElementById("errorState").hidden);
   }
 

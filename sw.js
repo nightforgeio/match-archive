@@ -21,7 +21,7 @@
 //
 // NOTE: the service worker caches the app SHELL only. The match records
 // themselves live in data/matches.json and are always fetched fresh.
-const VERSION = "vb38e59abab87";
+const VERSION = "v48fd83a0d4f1";
 const CACHE = "nfa-" + VERSION;
 const PRECACHE = [
   "./",
@@ -36,6 +36,8 @@ const PRECACHE = [
   "assets/icon-192.png",
   "assets/icon-512.png",
   "fonts/space-grotesk-var.woff2",
+  "fonts/barlow-condensed-700.woff2",
+  "fonts/barlow-condensed-600.woff2",
   "fonts/jetbrains-mono-var.woff2",
   "fonts/noto-sans-devanagari.woff2"
 ];

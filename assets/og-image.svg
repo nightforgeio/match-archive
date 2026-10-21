@@ -1,62 +1,68 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630">
   <defs>
-    <linearGradient id="glow" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0%" stop-color="#22d3ee" stop-opacity="0.16"/>
-      <stop offset="55%" stop-color="#22d3ee" stop-opacity="0.04"/>
-      <stop offset="100%" stop-color="#22d3ee" stop-opacity="0"/>
-    </linearGradient>
+    <radialGradient id="glow" cx="0.82" cy="0.14" r="0.78">
+      <stop offset="0%" stop-color="#ff6b1a" stop-opacity="0.22"/>
+      <stop offset="55%" stop-color="#ff6b1a" stop-opacity="0.05"/>
+      <stop offset="100%" stop-color="#ff6b1a" stop-opacity="0"/>
+    </radialGradient>
     <linearGradient id="rule" x1="0" y1="0" x2="1" y2="0">
-      <stop offset="0%" stop-color="#22d3ee" stop-opacity="0.9"/>
-      <stop offset="100%" stop-color="#22d3ee" stop-opacity="0"/>
+      <stop offset="0%" stop-color="#ff6b1a" stop-opacity="0.9"/>
+      <stop offset="100%" stop-color="#ff6b1a" stop-opacity="0"/>
     </linearGradient>
   </defs>
 
-  <rect width="1200" height="630" fill="#08090c"/>
+  <rect width="1200" height="630" fill="#0a0a0f"/>
   <rect width="1200" height="630" fill="url(#glow)"/>
 
+  <!-- the grid, like the site background -->
+  <g stroke="#ffffff" stroke-opacity="0.02" stroke-width="1">
+    <path d="M0 60h1200M0 120h1200M0 180h1200M0 240h1200M0 300h1200M0 360h1200M0 420h1200M0 480h1200M0 540h1200"/>
+    <path d="M60 0v630M120 0v630M180 0v630M240 0v630M300 0v630M360 0v630M420 0v630M480 0v630M540 0v630M600 0v630M660 0v630M720 0v630M780 0v630M840 0v630M900 0v630M960 0v630M1020 0v630M1080 0v630M1140 0v630"/>
+  </g>
+
   <!-- corner frame -->
-  <rect x="44" y="44" width="1112" height="542" rx="18" fill="none" stroke="#22d3ee" stroke-opacity="0.16" stroke-width="2"/>
+  <rect x="44" y="44" width="1112" height="542" rx="18" fill="none" stroke="#ff6b1a" stroke-opacity="0.16" stroke-width="2"/>
 
   <!-- brand mark -->
-  <g transform="translate(92,88)">
-    <rect x="0" y="0" width="64" height="64" rx="16" fill="none" stroke="#22d3ee" stroke-opacity="0.45" stroke-width="2"/>
-    <path d="M17 46V18l13 17.5V18" fill="none" stroke="#22d3ee" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/>
-    <path d="M36 18v28h10" fill="none" stroke="#22d3ee" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <g transform="translate(92,86)">
+    <rect x="0" y="0" width="64" height="64" rx="14" fill="#ff6b1a"/>
+    <path d="M19 46V18l13 17.5V18" fill="none" stroke="#170700" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M38 18v28h10" fill="none" stroke="#170700" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/>
   </g>
 
   <!-- kicker -->
-  <text x="92" y="232" font-family="JetBrains Mono" font-size="19" font-weight="500" letter-spacing="4.2" fill="#8b93a3">FREE FIRE MAX · MATCH ARCHIVE</text>
+  <text x="176" y="126" font-family="JetBrains Mono" font-size="18" font-weight="500" letter-spacing="4" fill="#9896a6">FREE FIRE MAX · MATCH ARCHIVE</text>
 
   <!-- rule -->
-  <rect x="92" y="262" width="180" height="3" rx="1.5" fill="url(#rule)"/>
+  <rect x="92" y="212" width="180" height="3" rx="1.5" fill="url(#rule)"/>
 
   <!-- headline -->
-  <text x="92" y="352" font-family="Space Grotesk" font-weight="700" font-size="62" letter-spacing="-1.9" fill="#f2f4f7">Every match.</text>
-  <text x="92" y="424" font-family="Space Grotesk" font-weight="700" font-size="62" letter-spacing="-1.9" fill="#f2f4f7">Every entry fee.</text>
-  <text x="92" y="496" font-family="Space Grotesk" font-weight="700" font-size="62" letter-spacing="-1.9" fill="#22d3ee">Every prize.</text>
+  <text x="92" y="308" font-family="Barlow Condensed, Arial Narrow, sans-serif" font-weight="700" font-size="78" letter-spacing="-1" fill="#f4f3f7">EVERY MATCH.</text>
+  <text x="92" y="386" font-family="Barlow Condensed, Arial Narrow, sans-serif" font-weight="700" font-size="78" letter-spacing="-1" fill="#f4f3f7">EVERY ENTRY FEE.</text>
+  <text x="92" y="464" font-family="Barlow Condensed, Arial Narrow, sans-serif" font-weight="700" font-size="78" letter-spacing="-1" fill="#ff6b1a">EVERY PRIZE.</text>
 
   <!-- mode chips -->
-  <g font-family="JetBrains Mono" font-size="17" font-weight="500" letter-spacing="1.4" fill="#ccd2dc">
-    <rect x="92" y="530" width="164" height="40" rx="20" fill="none" stroke="#2e3440" stroke-width="1.5"/>
-    <text x="174" y="556" text-anchor="middle">Clash Squad</text>
-    <rect x="272" y="530" width="184" height="40" rx="20" fill="none" stroke="#2e3440" stroke-width="1.5"/>
-    <text x="364" y="556" text-anchor="middle">Battle Royale</text>
-    <rect x="472" y="530" width="142" height="40" rx="20" fill="none" stroke="#2e3440" stroke-width="1.5"/>
-    <text x="543" y="556" text-anchor="middle">Lone Wolf</text>
+  <g font-family="JetBrains Mono" font-size="17" font-weight="500" letter-spacing="1.4" fill="#d6d4de">
+    <rect x="92" y="500" width="164" height="40" rx="20" fill="none" stroke="#35354a" stroke-width="1.5"/>
+    <text x="174" y="526" text-anchor="middle">Clash Squad</text>
+    <rect x="272" y="500" width="184" height="40" rx="20" fill="none" stroke="#35354a" stroke-width="1.5"/>
+    <text x="364" y="526" text-anchor="middle">Battle Royale</text>
+    <rect x="472" y="500" width="142" height="40" rx="20" fill="none" stroke="#35354a" stroke-width="1.5"/>
+    <text x="543" y="526" text-anchor="middle">Lone Wolf</text>
   </g>
 
-  <!-- right panel: a scoreline card -->
-  <g transform="translate(748,150)">
-    <rect x="0" y="0" width="360" height="330" rx="20" fill="#11141a" stroke="#22262f" stroke-width="1.5"/>
-    <text x="28" y="48" font-family="JetBrains Mono" font-size="15" letter-spacing="2.6" fill="#8b93a3">CLASH SQUAD · BERMUDA</text>
-    <rect x="28" y="68" width="304" height="1.5" fill="#22262f"/>
-    <text x="28" y="132" font-family="Space Grotesk" font-weight="700" font-size="40" fill="#f2f4f7">3-1</text>
-    <text x="28" y="170" font-family="Space Grotesk" font-weight="500" font-size="24" fill="#ccd2dc">NIGHTFORGE</text>
-    <text x="28" y="204" font-family="Space Grotesk" font-weight="500" font-size="24" fill="#8b93a3">TEAM VELOCITY</text>
-    <rect x="28" y="232" width="72" height="30" rx="8" fill="#34d399" fill-opacity="0.14" stroke="#34d399" stroke-opacity="0.5" stroke-width="1.5"/>
-    <text x="64" y="252" text-anchor="middle" font-family="JetBrains Mono" font-size="15" font-weight="600" fill="#34d399">W</text>
-    <text x="116" y="252" font-family="JetBrains Mono" font-size="15" fill="#8b93a3">#1</text>
-    <text x="28" y="300" font-family="JetBrains Mono" font-size="17" fill="#ccd2dc">₹10,000</text>
-    <text x="332" y="300" text-anchor="end" font-family="JetBrains Mono" font-size="15" fill="#8b93a3">PRIZE</text>
+  <!-- right panel: a scoreline card, in the shape of the live match cards -->
+  <g transform="translate(748,146)">
+    <rect x="0" y="0" width="360" height="338" rx="18" fill="#15151e" stroke="#262633" stroke-width="1.5"/>
+    <text x="28" y="48" font-family="JetBrains Mono" font-size="15" letter-spacing="2.6" fill="#9896a6">CLASH SQUAD · BERMUDA</text>
+    <rect x="28" y="68" width="304" height="1.5" fill="#262633"/>
+    <text x="28" y="138" font-family="Barlow Condensed, Arial Narrow, sans-serif" font-weight="700" font-size="52" fill="#f4f3f7">3-1</text>
+    <text x="28" y="178" font-family="Barlow Condensed, Arial Narrow, sans-serif" font-weight="600" font-size="26" fill="#f4f3f7">NIGHTFORGE</text>
+    <text x="28" y="212" font-family="Barlow Condensed, Arial Narrow, sans-serif" font-weight="600" font-size="26" fill="#9896a6">TEAM VELOCITY</text>
+    <rect x="28" y="240" width="72" height="30" rx="8" fill="#3ddc84" fill-opacity="0.14" stroke="#3ddc84" stroke-opacity="0.5" stroke-width="1.5"/>
+    <text x="64" y="260" text-anchor="middle" font-family="JetBrains Mono" font-size="15" font-weight="600" fill="#3ddc84">W</text>
+    <text x="116" y="260" font-family="JetBrains Mono" font-size="15" fill="#9896a6">#1</text>
+    <text x="28" y="308" font-family="JetBrains Mono" font-size="17" fill="#d6d4de">₹10,000</text>
+    <text x="332" y="308" text-anchor="end" font-family="JetBrains Mono" font-size="15" fill="#9896a6">PRIZE</text>
   </g>
 </svg>

@@ -162,6 +162,17 @@ else
   echo "  ⏭️  tests/app-dom.test.js — skipped (jsdom not installed)"
 fi
 
+# The reveal lifecycle suite drives the real app against a controllable
+# fake IntersectionObserver, so it needs jsdom like the DOM suite does.
+if [ -d "$LINT_TOOLS/node_modules/jsdom" ]; then
+  run_suite "tests/reveal.test.js" \
+    "cd $LINT_TOOLS && node $PROJECT_DIR/tests/reveal.test.js" \
+    /tmp/mh-revealtest.out \
+    'RESULTS: [0-9]+ passed, [0-9]+ failed'
+else
+  echo "  ⏭️  tests/reveal.test.js — skipped (jsdom not installed)"
+fi
+
 # The i18n parity suite is a plain node:test file.
 run_suite "tests/i18n-parity.test.js" \
   "node --test $PROJECT_DIR/tests/i18n-parity.test.js" \

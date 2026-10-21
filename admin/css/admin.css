@@ -16,9 +16,9 @@
   --fg: #f2f4f7;
   --fg-2: #ccd2dc;
   --muted: #8b93a3;
-  --accent: #22d3ee;
-  --accent-ink: #04121a;
-  --accent-dim: rgb(34 211 238 / 12%);
+  --accent: #ff6b1a;
+  --accent-ink: #170700;
+  --accent-dim: rgb(255 107 26 / 12%);
   --danger: #f87171;
   --danger-dim: rgb(248 113 113 / 12%);
   --ok: #34d399;
@@ -118,7 +118,7 @@ code {
 }
 
 .btn--primary:hover {
-  box-shadow: 0 6px 20px rgb(34 211 238 / 20%);
+  box-shadow: 0 6px 20px rgb(255 107 26 / 20%);
 }
 
 .btn--secondary {

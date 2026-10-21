@@ -28,17 +28,38 @@
       menuClose: "Close menu",
 
       heroKicker: "Free Fire MAX match archive",
-      heroTitle: "Every match. Every entry fee. Every prize.",
+      heroTitleLead: "Every match. Every entry fee.",
+      heroTitleAccent: "Every prize.",
       heroSub:
         "The complete record of our Free Fire MAX tournament and scrim run — filterable, searchable and open for anyone to check.",
       heroCtaPrimary: "Browse the archive",
       heroCtaSecondary: "Team and contact",
-      heroStatMatches: "Matches played",
-      heroStatWins: "Wins",
-      heroStatPrize: "Prize won",
-      heroStatWinRate: "Win rate",
       formLabel: "Recent form",
       formLastTen: "Last 10 results",
+
+      // The board in the hero — the team identity and the headline numbers,
+      // in the shape of a broadcast lower-third.
+      boardTag: "Team record",
+      boardSeason: "Season",
+      boardStatMatches: "Matches",
+      boardStatWins: "Wins",
+      boardStatWinRate: "Win rate",
+      boardStatPrize: "Prize won",
+
+      // The mode rail.
+      modesKicker: "Game modes",
+      modesTitle: "The modes we play",
+      modesSub:
+        "Free Fire MAX competitive play runs on three modes. Every record in the archive is filed under the mode it was played in.",
+      modeDescCs:
+        "Head-to-head squad rounds on a single map. First team to three rounds takes the match.",
+      modeDescBr:
+        "Full-squad survival on a shrinking map. Placement decides the result, not a round score.",
+      modeDescLw:
+        "One player, one life, one arena. A straight duel where aim and timing decide everything.",
+      modePlayed: "played",
+      modeWon: "won",
+      modeView: "View archive",
 
       demoBanner:
         "These are sample records, so you can see how the archive works. The owner replaces them with the real Free Fire MAX match log.",
@@ -168,17 +189,37 @@
       menuClose: "मेन्यू बंद करें",
 
       heroKicker: "Free Fire MAX मैच रिकॉर्ड",
-      heroTitle: "हर मैच। हर एंट्री फीस। हर इनाम।",
+      heroTitleLead: "हर मैच। हर एंट्री फीस।",
+      heroTitleAccent: "हर इनाम।",
       heroSub:
         "हमारे Free Fire MAX टूर्नामेंट व स्क्रिम का पूरा रिकॉर्ड — फ़िल्टर करने योग्य, खोजने योग्य और किसी के लिए भी खुला।",
       heroCtaPrimary: "रिकॉर्ड देखें",
       heroCtaSecondary: "टीम और संपर्क",
-      heroStatMatches: "खेले गए मैच",
-      heroStatWins: "जीत",
-      heroStatPrize: "जीता इनाम",
-      heroStatWinRate: "जीत दर",
       formLabel: "हाल का प्रदर्शन",
       formLastTen: "पिछले 10 नतीजे",
+
+      // हरो का बोर्ड — टीम की पहचान और मुख्य आँकड़े।
+      boardTag: "टीम रिकॉर्ड",
+      boardSeason: "सीज़न",
+      boardStatMatches: "मैच",
+      boardStatWins: "जीत",
+      boardStatWinRate: "जीत दर",
+      boardStatPrize: "जीता इनाम",
+
+      // मोड की रेल।
+      modesKicker: "गेम मोड",
+      modesTitle: "हम जो मोड खेलते हैं",
+      modesSub:
+        "Free Fire MAX में प्रतिस्पर्धा तीन मोड में होती है। रिकॉर्ड में हर मैच उसी मोड के नाम पर दर्ज है जिसमें वह खेला गया था।",
+      modeDescCs:
+        "एक ही नक्शे पर सामने वाली टीमों के राउंड। जो टीम पहले तीन राउंड जीत लेती है, मैच उसी की।",
+      modeDescBr:
+        "छोटे होते नक्शे पर पूरी टीम की सर्वाइवल। नतीजा स्कोर से नहीं, स्थान से तय होता है।",
+      modeDescLw:
+        "एक खिलाड़ी, एक ज़िंदगी, एक अखाड़ा। सीधा मुकाबला, जहाँ निशाना और समय सब कुछ तय करते हैं।",
+      modePlayed: "खेले",
+      modeWon: "जीते",
+      modeView: "रिकॉर्ड देखें",
 
       demoBanner:
         "ये नमूना रिकॉर्ड हैं, ताकि आपको पता चले रिकॉर्ड कैसा दिखता है। असली Free Fire MAX मैच लॉग इन्हीं की जगह आएगा।",

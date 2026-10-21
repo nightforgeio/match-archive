@@ -161,6 +161,22 @@ const rm = css.slice(css.indexOf("@media (prefers-reduced-motion: reduce)"));
 ok("reduced motion neutralises the reveal animation", /\.js \.rv\s*\{[^}]*opacity:\s*1/.test(rm));
 ok("reduced motion neutralises the reveal transform", /\.js \.rv\s*\{[^}]*transform:\s*none/.test(rm));
 ok("reduced motion disables smooth scrolling", /scroll-behavior:\s*auto/.test(rm));
+// A wipe reveal paints a cover over the content instead of clipping the
+// content away. If it were a clip-path on the block, the block's visible
+// area would collapse to zero, the IntersectionObserver would never
+// report it as intersecting, and the section would stay invisible.
+ok(
+  "the wipe reveal does not clip the block away",
+  !/\.js \.rv--wipe\s*\{[^}]*clip-path/.test(css),
+);
+ok(
+  "the wipe reveal paints a cover instead",
+  /\.js \.rv--wipe::before\s*\{[^}]*content:\s*""/.test(css),
+);
+ok(
+  "reduced motion removes the wipe cover",
+  /\.js \.rv--wipe::before\s*\{[^}]*display:\s*none/.test(rm),
+);
 
 // --- 5. Colour discipline -------------------------------------------------
 console.log("\n=== COLOUR ===");

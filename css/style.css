@@ -1200,17 +1200,39 @@ ul {
   transform: translateX(340%) skewX(-18deg);
 }
 
-/* The result flag: a notched, tinted slab on the leading edge. */
+/* The result rail: a full-height notched slab down the leading edge of
+   the card. The big letter is the result; the full word is turned on its
+   side up the rail so the card reads as a result even when it is skimmed.
+   The word is painted from a data attribute, so it never enters the
+   element's text — the element still reads as the plain letter "W". */
 .match__result {
-  display: grid;
-  place-items: center;
-  min-height: 62px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  align-self: stretch;
+  padding: var(--space-lg) 5px;
   background: var(--flag-bg);
   clip-path: var(--cut-md);
   color: var(--flag-fg);
-  font-family: var(--font-m);
-  font-size: 1.45rem;
+  font-family: var(--font-display);
+  font-size: 2rem;
   font-weight: 700;
+  line-height: 1;
+}
+
+.match__result::after {
+  content: attr(data-word);
+  color: currentcolor;
+  font-family: var(--font-m);
+  font-size: 0.56rem;
+  font-weight: 600;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  opacity: 72%;
+  writing-mode: vertical-rl;
+  transform: rotate(180deg);
 }
 
 .match[data-result="W"] .match__result {
@@ -1226,6 +1248,13 @@ ul {
 .match[data-result="D"] .match__result {
   --flag-bg: rgb(154 163 184 / 13%);
   --flag-fg: var(--draw);
+}
+
+/* A fixture with no result yet is neutral — it has not been played, so it
+   gets no semantic colour at all. */
+.match[data-result="none"] .match__result {
+  --flag-bg: rgb(255 255 255 / 4%);
+  --flag-fg: var(--line-2);
 }
 
 .match__body {
@@ -1286,22 +1315,43 @@ ul {
   text-transform: uppercase;
 }
 
+/* The scoreline is the card's scoreboard. The score is the hero, set in the
+   broadcast face at display size with tabular figures so a column of cards
+   lines up; the opponent is the secondary read. `nowrap` on the score keeps
+   "1st - #4" as one unit rather than wrapping mid-figure. */
 .match__scoreline {
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+  flex-wrap: wrap;
+  padding: var(--space-md) 0;
+  border-block: 1px solid var(--line);
+}
+
+.match__scorebox {
   display: flex;
   align-items: baseline;
   gap: var(--space-sm);
-  flex-wrap: wrap;
-  padding: var(--space-sm) 0;
-  border-block: 1px solid var(--line);
+  min-width: 0;
 }
 
 .match__score {
   font-family: var(--font-display);
-  font-size: clamp(1.7rem, 3.4vw, 2.3rem);
+  font-size: clamp(1.9rem, 4vw, 2.6rem);
   font-variant-numeric: tabular-nums;
   font-weight: 700;
   letter-spacing: 0.01em;
-  line-height: 1;
+  line-height: 0.96;
+  white-space: nowrap;
+}
+
+/* A card with no score yet shows an em dash. It must not read as a score
+   of zero, so the dash is dimmed and the figure is set at the size a real
+   score would be — the slot stays reserved, the value just says "unknown". */
+.match__score[data-empty="true"],
+.match__opponent[data-empty="true"] {
+  color: var(--muted);
+  font-weight: 400;
 }
 
 .match__vs {
@@ -1312,10 +1362,26 @@ ul {
   text-transform: uppercase;
 }
 
+.match__opponentbox {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.match__opponent-label {
+  color: var(--muted);
+  font-family: var(--font-m);
+  font-size: 0.58rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
 .match__opponent {
   color: var(--fg);
-  font-size: 0.98rem;
+  font-size: 1.02rem;
   font-weight: 600;
+  overflow-wrap: anywhere;
 }
 
 .match__meta {
@@ -1374,6 +1440,553 @@ ul {
   vertical-align: middle;
 }
 
+/* --- Form: the streaks ---------------------------------------------------- */
+/* The run board. Three tiles: the live run, the longest win run and the
+   longest loss run. The live run is the one that matters, so it carries
+   the accent and the big number. */
+
+.streaks {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1px;
+  margin-top: clamp(36px, 5vw, 56px);
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-card);
+  background: var(--line);
+}
+
+.streak {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+  min-width: 0;
+  padding: var(--space-lg);
+  background: var(--bg-2);
+  transition: background-color var(--dur) var(--ease);
+}
+
+.streak:hover {
+  background: var(--card);
+}
+
+/* The live run gets the accent rule on top and the display face for the
+   number — the same treatment the hero's feature stat tiles get. */
+.streak--live {
+  background: var(--card);
+}
+
+.streak--live::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 42%;
+  height: 2px;
+  background: var(--accent);
+}
+
+.streak__label {
+  color: var(--muted);
+  font-family: var(--font-m);
+  font-size: 0.7rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.streak__value {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  font-family: var(--font-display);
+  font-size: clamp(2.4rem, 5vw, 3.6rem);
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  line-height: 0.92;
+}
+
+.streak__unit {
+  color: var(--fg-2);
+  font-family: var(--font-m);
+  font-size: 0.76rem;
+  font-weight: 500;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.streak--live .streak__value {
+  color: var(--accent);
+}
+
+/* The longest runs are plain numbers — they are reference, not news. */
+.streak--plain .streak__value {
+  font-size: clamp(1.9rem, 3.6vw, 2.6rem);
+  color: var(--fg);
+}
+
+/* The five most recent results, as a row of flags. */
+.streak-form {
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+  flex-wrap: wrap;
+  margin-top: var(--space-lg);
+  padding-top: var(--space-lg);
+  border-top: 1px solid var(--line);
+}
+
+.streak-form__label {
+  color: var(--muted);
+  font-family: var(--font-m);
+  font-size: 0.7rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.streak-form__row {
+  display: flex;
+  gap: 6px;
+}
+
+.streak-form__row .form-dot {
+  min-width: 30px;
+  height: 30px;
+  font-size: 0.82rem;
+}
+
+/* The live run's accent rule draws itself in when the board reveals.
+
+   The bar is scaled, never re-widthed — a width transition would relayout
+   the tile on every frame. transform is composited, so the draw is free.
+   The .js guard keeps the bar at full length when scripting is off, so a
+   no-JS visitor still sees the accent rule instead of an empty tile. */
+.js .streak--live::before {
+  transform: scaleX(0);
+  transform-origin: left center;
+  transition: transform var(--dur-med) var(--ease-out) 0.1s;
+}
+
+.js .rv.in .streak--live::before {
+  transform: scaleX(1);
+}
+
+/* The form flags pop in sequence, newest first, so the strip reads as a
+   ticker filling rather than a block appearing. */
+.js .streak-form__row .form-dot {
+  opacity: 0%;
+  transform: translateY(6px);
+}
+
+.js .rv.in .streak-form__row .form-dot {
+  opacity: 100%;
+  transform: none;
+  transition:
+    opacity var(--dur) var(--ease) var(--dot-delay, 0ms),
+    transform var(--dur) var(--ease) var(--dot-delay, 0ms);
+}
+
+/* The expected number of rows in the form strip. Matched on the class, not
+   on a bare nth-child, so the stagger rules cannot accidentally hit some
+   other sequence that happens to be nested the same number of levels deep. */
+.js .rv.in .streak-form__row .form-dot:nth-child(1) {
+  --dot-delay: calc(var(--stagger) * 0);
+}
+
+.js .rv.in .streak-form__row .form-dot:nth-child(2) {
+  --dot-delay: calc(var(--stagger) * 1);
+}
+
+.js .rv.in .streak-form__row .form-dot:nth-child(3) {
+  --dot-delay: calc(var(--stagger) * 2);
+}
+
+.js .rv.in .streak-form__row .form-dot:nth-child(4) {
+  --dot-delay: calc(var(--stagger) * 3);
+}
+
+.js .rv.in .streak-form__row .form-dot:nth-child(5) {
+  --dot-delay: calc(var(--stagger) * 4);
+}
+
+/* Past the first five the delay stops growing, so a strip that somehow
+   holds more than five flags still finishes rather than trailing off. */
+.js .rv.in .streak-form__row .form-dot:nth-child(n + 6) {
+  --dot-delay: calc(var(--stagger) * 5);
+}
+
+/* --- Head to head --------------------------------------------------------- */
+/* One row per opponent. The W/L record is the point of the row, so it is
+   the element that carries the colour. */
+
+.h2h {
+  display: grid;
+  gap: 1px;
+  margin-top: clamp(36px, 5vw, 56px);
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-card);
+  background: var(--line);
+}
+
+.h2h__row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: var(--space-lg);
+  padding: var(--space-md) var(--space-lg);
+  background: var(--bg-2);
+  transition: background-color var(--dur) var(--ease);
+}
+
+.h2h__row:hover {
+  background: var(--card);
+}
+
+.h2h__name {
+  min-width: 0;
+  font-family: var(--font-display);
+  font-size: 1.2rem;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  line-height: 1.15;
+  text-transform: uppercase;
+  overflow-wrap: anywhere;
+}
+
+/* The W / L / D split. Each part is its own flag so the eye can read the
+   record at a glance instead of parsing a sentence. */
+.h2h__record {
+  display: flex;
+  gap: 4px;
+}
+
+.h2h__flag {
+  display: grid;
+  place-items: center;
+  min-width: 26px;
+  height: 26px;
+  padding: 0 6px;
+  clip-path: var(--cut-sm);
+  font-family: var(--font-m);
+  font-size: 0.72rem;
+  font-weight: 700;
+}
+
+.h2h__flag[data-r="W"] {
+  background: rgb(61 220 132 / 16%);
+  color: var(--win);
+}
+
+.h2h__flag[data-r="L"] {
+  background: rgb(255 90 90 / 16%);
+  color: var(--loss);
+}
+
+.h2h__flag[data-r="D"] {
+  background: rgb(154 163 184 / 16%);
+  color: var(--draw);
+}
+
+/* A flag with a zero count is dimmed — it says "never happened" without
+   shouting it. */
+.h2h__flag[data-zero="true"] {
+  opacity: 34%;
+}
+
+.h2h__prize {
+  color: var(--fg-2);
+  font-family: var(--font-m);
+  font-size: 0.8rem;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.h2h__count {
+  color: var(--muted);
+  font-family: var(--font-m);
+  font-size: 0.72rem;
+}
+
+/* The rows deal in from the left, one after another, like a results board
+   filling. translateX is composited, never a layout property, and the
+   stagger is derived from the tokens so reduced motion collapses the whole
+   sequence to an instant.
+
+   A transition is used rather than a paused animation: a paused animation
+   parked at its "from" keyframe would leave the rows invisible if the
+   reveal never fired. A transition only describes the change, so the rows
+   are painted by their own rule and stay visible without it. */
+.js .h2h__row {
+  opacity: 0%;
+  transform: translateX(-14px);
+}
+
+.js .h2h.in .h2h__row {
+  opacity: 100%;
+  transform: none;
+  transition:
+    opacity var(--dur-med) var(--ease-out) var(--row-delay, 0ms),
+    transform var(--dur-med) var(--ease-out) var(--row-delay, 0ms);
+}
+
+/* The rows deal in sequence. nth-child is used rather than an inline
+   custom property, so no element carries a style attribute. */
+.js .h2h.in .h2h__row:nth-child(1) {
+  --row-delay: calc(var(--stagger) * 0);
+}
+
+.js .h2h.in .h2h__row:nth-child(2) {
+  --row-delay: calc(var(--stagger) * 1);
+}
+
+.js .h2h.in .h2h__row:nth-child(3) {
+  --row-delay: calc(var(--stagger) * 2);
+}
+
+.js .h2h.in .h2h__row:nth-child(4) {
+  --row-delay: calc(var(--stagger) * 3);
+}
+
+.js .h2h.in .h2h__row:nth-child(5) {
+  --row-delay: calc(var(--stagger) * 4);
+}
+
+.js .h2h.in .h2h__row:nth-child(6) {
+  --row-delay: calc(var(--stagger) * 5);
+}
+
+.js .h2h.in .h2h__row:nth-child(7) {
+  --row-delay: calc(var(--stagger) * 6);
+}
+
+.js .h2h.in .h2h__row:nth-child(8) {
+  --row-delay: calc(var(--stagger) * 7);
+}
+
+/* Past the eighth row the delay stops growing, so a record with more
+   opponents than the board has rules for still finishes dealing. */
+.js .h2h.in .h2h__row:nth-child(n + 9) {
+  --row-delay: calc(var(--stagger) * 8);
+}
+
+/* --- Player analysis ------------------------------------------------------ */
+/* Each player's own record. The name is the row's identity, the numbers
+   are the record. */
+
+.player-analysis {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: var(--space-md);
+  margin-top: clamp(36px, 5vw, 56px);
+}
+
+.pstat {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+  padding: var(--space-lg);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-card);
+  background: var(--card);
+  transition:
+    transform var(--dur) var(--ease),
+    border-color var(--dur) var(--ease),
+    background-color var(--dur) var(--ease);
+}
+
+.pstat:hover {
+  transform: translateY(-3px);
+  border-color: var(--line-2);
+  background: var(--card-2);
+}
+
+.pstat__head {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+}
+
+.pstat__slot {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 30px;
+  height: 30px;
+  background: var(--accent-dim);
+  clip-path: var(--cut-sm);
+  color: var(--accent);
+  font-family: var(--font-m);
+  font-size: 0.72rem;
+  font-weight: 700;
+}
+
+.pstat__name {
+  min-width: 0;
+  font-family: var(--font-display);
+  font-size: 1.35rem;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  line-height: 1.1;
+  text-transform: uppercase;
+  overflow-wrap: anywhere;
+}
+
+.pstat__role {
+  color: var(--muted);
+  font-family: var(--font-m);
+  font-size: 0.68rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.pstat__grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1px;
+  margin: 0;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: var(--line);
+}
+
+.pstat__grid > div {
+  min-width: 0;
+  padding: 10px;
+  background: var(--bg-2);
+}
+
+.pstat__grid dt {
+  margin-bottom: 3px;
+  color: var(--muted);
+  font-family: var(--font-m);
+  font-size: 0.6rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.pstat__grid dd {
+  margin: 0;
+  font-family: var(--font-m);
+  font-size: 0.95rem;
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+  overflow-wrap: anywhere;
+}
+
+.pstat__last {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  color: var(--muted);
+  font-family: var(--font-m);
+  font-size: 0.68rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+/* --- Round-by-round ------------------------------------------------------ */
+/* The per-round winners on a match card. A round is either ours (ember) or
+   the opponent's (neutral). The strip reads left-to-right as the match
+   unfolded. */
+
+.round-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 30px;
+  padding: 3px 10px;
+  border: 1px solid var(--line-2);
+  border-radius: 999px;
+  background: var(--card);
+  font-family: var(--font-m);
+  font-size: 0.72rem;
+  letter-spacing: 0.03em;
+  animation: round-in var(--dur-med) var(--ease-out) both;
+}
+
+.round-chip[data-side="nf"] {
+  border-color: rgb(255 107 26 / 45%);
+  background: var(--accent-dim);
+  color: var(--accent);
+}
+
+.round-chip[data-side="opp"] {
+  border-color: var(--line);
+  color: var(--fg-2);
+}
+
+.round-chip__num {
+  opacity: 70%;
+}
+
+.round-chip__team {
+  font-weight: 700;
+}
+
+.match__rounds {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid var(--line);
+}
+
+.round-chip__label {
+  color: var(--muted);
+  font-family: var(--font-m);
+  font-size: 0.7rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.round-chip__list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.round-chip:nth-child(1) {
+  animation-delay: 60ms;
+}
+
+.round-chip:nth-child(2) {
+  animation-delay: 110ms;
+}
+
+.round-chip:nth-child(3) {
+  animation-delay: 160ms;
+}
+
+.round-chip:nth-child(4) {
+  animation-delay: 210ms;
+}
+
+.round-chip:nth-child(5) {
+  animation-delay: 260ms;
+}
+
+.round-chip:nth-child(n + 6) {
+  animation-delay: 310ms;
+}
+
+@keyframes round-in {
+  from {
+    opacity: 0%;
+    transform: translateY(6px);
+  }
+
+  to {
+    opacity: 100%;
+    transform: none;
+  }
+}
+
 /* --- States --------------------------------------------------------------- */
 
 .state {
@@ -1381,6 +1994,14 @@ ul {
   border: 1px dashed var(--line-2);
   border-radius: var(--radius-card);
   text-align: center;
+}
+
+/* An inline state sits inside a section that has other content, so it is
+   tighter and left-aligned rather than a full-width hero message. */
+.state--inline {
+  margin-top: clamp(36px, 5vw, 56px);
+  padding: var(--space-lg);
+  text-align: start;
 }
 
 .state__title {
@@ -1483,6 +2104,348 @@ ul {
   color: var(--muted);
   cursor: default;
   text-decoration: none;
+}
+
+/* --- The lineup ----------------------------------------------------------- */
+
+.roster-block {
+  margin-top: var(--space-2xl);
+  padding-top: var(--space-xl);
+  border-top: 1px solid var(--line);
+}
+
+.roster-block__title {
+  margin-bottom: var(--space-sm);
+  font-family: var(--font-display);
+  font-size: 1.5rem;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  text-transform: uppercase;
+}
+
+.roster-block__sub {
+  max-width: 52ch;
+  margin-bottom: var(--space-lg);
+  color: var(--muted);
+}
+
+.roster {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+  gap: var(--space-md);
+}
+
+/* A player card. The slot number is the broadcast convention: it shows
+   the position on the floor, not a rank. */
+.player {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  grid-template-areas:
+    "slot name"
+    "slot role";
+  align-items: center;
+  gap: 2px var(--space-md);
+  padding: var(--space-md) var(--space-lg);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: var(--card);
+  transition:
+    border-color var(--dur) var(--ease),
+    transform var(--dur) var(--ease),
+    background-color var(--dur) var(--ease);
+}
+
+.player:hover {
+  transform: translateY(-2px);
+  border-color: var(--accent-line);
+  background: var(--card-2);
+}
+
+.player__slot {
+  grid-area: slot;
+  display: grid;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  border: 1px solid var(--line-2);
+  border-radius: var(--radius-sm);
+  background: var(--bg-2);
+  color: var(--accent);
+  font-family: var(--font-m);
+  font-size: 0.78rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.player__name {
+  grid-area: name;
+  font-family: var(--font-display);
+  font-size: 1.2rem;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  text-transform: uppercase;
+  overflow-wrap: anywhere;
+}
+
+.player__role {
+  grid-area: role;
+  color: var(--muted);
+  font-family: var(--font-m);
+  font-size: 0.7rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+/* A guest joined for one match. The card says so, so a visitor is never
+   left thinking the lineup is the standing squad. */
+.player--guest {
+  border-style: dashed;
+}
+
+.player--guest .player__slot {
+  color: var(--muted);
+}
+
+.player__tag {
+  grid-area: role;
+  place-self: start;
+  margin-top: 2px;
+  padding: 2px 8px;
+  border: 1px solid var(--line-2);
+  border-radius: var(--radius-pill);
+  color: var(--muted);
+  font-family: var(--font-m);
+  font-size: 0.62rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+/* The player has no role — the grid collapses to a single row. */
+.player:has(.player__tag) .player__role {
+  display: none;
+}
+
+.player--empty {
+  display: block;
+  grid-template-columns: none;
+  color: var(--muted);
+}
+
+/* --- The fixture board ---------------------------------------------------- */
+
+/* The fixture section sits between the modes and the archive, so it
+   breaks the page's rhythm on purpose: the announcement is the one
+   thing a visitor should see before the record. */
+.section--fixture {
+  background: var(--bg-2);
+  border-top: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+}
+
+.fixture {
+  margin-top: var(--space-lg);
+  padding: var(--space-lg);
+  border: 1px solid var(--line-2);
+  border-radius: var(--radius-card);
+  background: var(--card);
+}
+
+.fixture__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-md);
+  margin-bottom: var(--space-lg);
+  padding-bottom: var(--space-md);
+  border-bottom: 1px solid var(--line);
+}
+
+.fixture__tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 12px;
+  border: 1px solid var(--accent-line);
+  border-radius: var(--radius-pill);
+  background: var(--accent-dim);
+  color: var(--accent);
+  font-family: var(--font-m);
+  font-size: 0.68rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+/* A live dot on the pending tag. It breathes, so the board reads as
+   live rather than as a stale page. */
+.fixture__tag::before {
+  content: "";
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--accent);
+  box-shadow: 0 0 0 0 var(--accent-glow);
+  animation: pulse-dot 2.4s var(--ease-out) var(--iter);
+}
+
+@keyframes pulse-dot {
+  0% {
+    box-shadow: 0 0 0 0 var(--accent-glow);
+  }
+
+  70% {
+    box-shadow: 0 0 0 10px rgb(255 107 26 / 0%);
+  }
+
+  100% {
+    box-shadow: 0 0 0 0 rgb(255 107 26 / 0%);
+  }
+}
+
+.fixture__mode {
+  color: var(--muted);
+  font-family: var(--font-m);
+  font-size: 0.72rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.fixture__when {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--space-md);
+  margin-bottom: var(--space-sm);
+}
+
+.fixture__date {
+  font-family: var(--font-m);
+  font-size: 0.8rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.fixture__time {
+  font-family: var(--font-display);
+  font-size: clamp(1.8rem, 4vw, 2.6rem);
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  line-height: 1;
+  text-transform: uppercase;
+  color: var(--fg);
+}
+
+.fixture__event {
+  margin-bottom: var(--space-lg);
+  font-family: var(--font-display);
+  font-size: 1.6rem;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  text-transform: uppercase;
+  overflow-wrap: anywhere;
+}
+
+.fixture__rows {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1px;
+  margin: 0;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: var(--line);
+  overflow: hidden;
+}
+
+.fixture__row {
+  padding: var(--space-md) var(--space-lg);
+  background: var(--bg-2);
+}
+
+.fixture__label {
+  display: block;
+  margin-bottom: 4px;
+  color: var(--muted);
+  font-family: var(--font-m);
+  font-size: 0.66rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.fixture__value {
+  margin: 0;
+  font-family: var(--font-m);
+  font-size: 0.95rem;
+  overflow-wrap: anywhere;
+}
+
+/* An unknown field says so. It never shows a placeholder that could be
+   mistaken for a real value. */
+.fixture__value--tbd {
+  color: var(--muted);
+  font-style: italic;
+}
+
+.fixture__lineup {
+  margin-top: var(--space-lg);
+}
+
+.fixture__lineup-label {
+  display: block;
+  margin-bottom: var(--space-md);
+  color: var(--muted);
+  font-family: var(--font-m);
+  font-size: 0.66rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.fixture__players {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: var(--space-sm);
+}
+
+.fixture__player {
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+  min-height: 44px;
+  padding: 10px var(--space-md);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: var(--bg-2);
+}
+
+.fixture__player-slot {
+  color: var(--accent);
+  font-family: var(--font-m);
+  font-size: 0.72rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.fixture__player-name {
+  font-family: var(--font-m);
+  font-size: 0.85rem;
+  overflow-wrap: anywhere;
+}
+
+/* An open slot — a player who has not been named yet. */
+.fixture__player--open {
+  border-style: dashed;
+}
+
+.fixture__player--open .fixture__player-name {
+  color: var(--muted);
+  font-style: italic;
+}
+
+.fixture__note {
+  margin: var(--space-lg) 0 0;
+  padding-top: var(--space-md);
+  border-top: 1px solid var(--line);
+  color: var(--muted);
+  font-size: 0.9rem;
 }
 
 /* --- Contact -------------------------------------------------------------- */
@@ -1948,6 +2911,10 @@ ul {
   .breakdowns {
     grid-template-columns: minmax(0, 1fr);
   }
+
+  .streaks {
+    grid-template-columns: minmax(0, 1fr);
+  }
 }
 
 @media (width <= 820px) {
@@ -2022,8 +2989,15 @@ ul {
   }
 
   .match__result {
-    min-height: 46px;
-    font-size: 1.1rem;
+    padding: var(--space-md) 3px;
+    font-size: 1.4rem;
+  }
+
+  /* The side-set result word needs a wide rail. At 46px it would wrap
+     into a stack of single letters, so the rail carries the letter alone
+     and the colour still does the talking. */
+  .match__result::after {
+    display: none;
   }
 
   .match__body {
@@ -2042,6 +3016,47 @@ ul {
     flex-direction: column;
     align-items: flex-start;
     gap: var(--space-sm);
+  }
+
+  .fixture {
+    padding: var(--space-md);
+  }
+
+  .fixture__rows,
+  .fixture__players {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .player {
+    padding: var(--space-md);
+  }
+
+  .streak {
+    padding: var(--space-md);
+  }
+
+  .streak__value {
+    font-size: 2.4rem;
+  }
+
+  .h2h__row {
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: var(--space-sm) var(--space-md);
+    padding: var(--space-md);
+  }
+
+  /* The prize line drops below the record on a phone, so the name keeps
+     the full width and the numbers stay on one line. */
+  .h2h__prize {
+    grid-column: 1 / -1;
+  }
+
+  .pstat {
+    padding: var(--space-md);
+  }
+
+  .pstat__grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 }
 
@@ -2069,6 +3084,19 @@ ul {
     transform: none;
   }
 
+  /* A transition that never completes would leave the staggered elements
+     parked at their "from" state, so they are pinned to their finished
+     state here rather than relying on the transition to land. */
+  .js .h2h__row,
+  .js .streak-form__row .form-dot {
+    opacity: 100%;
+    transform: none;
+  }
+
+  .js .streak--live::before {
+    transform: scaleX(1);
+  }
+
   /* A wipe that never completes would keep the cover parked over the
      content, so the cover is removed entirely. */
   .js .rv--wipe::before {
@@ -2077,5 +3105,12 @@ ul {
 
   .breakdown__bar span {
     transform: scaleX(1);
+  }
+  /* The pending tag pulses forever. The reduced-motion block collapses
+     the animation, but the ring still has to be neutralised so no dot
+     sits frozen mid-pulse. */
+  .fixture__tag::before {
+    animation: none;
+    box-shadow: none;
   }
 }

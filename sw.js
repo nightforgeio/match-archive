@@ -21,7 +21,7 @@
 //
 // NOTE: the service worker caches the app SHELL only. The match records
 // themselves live in data/matches.json and are always fetched fresh.
-const VERSION = "v48fd83a0d4f1";
+const VERSION = "vfe48ba7a8630";
 const CACHE = "nfa-" + VERSION;
 const PRECACHE = [
   "./",

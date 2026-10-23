@@ -36,7 +36,7 @@ done
 
 # --- 2. JSON validity -----------------------------------------------------
 echo "▶ Checking JSON files..."
-for f in data/*.json manifest.json; do
+for f in data/*.json manifest.json tests/fixtures/*.json; do
   if python3 -c "import json; json.load(open('$f'))" 2>/dev/null; then
     echo "  ✅ $f"
     PASS=$((PASS + 1))
@@ -152,6 +152,12 @@ run_suite "tests/data-layer.test.js" \
   /tmp/mh-datalayer.out \
   'RESULTS: [0-9]+ passed, [0-9]+ failed'
 
+# The production archive's integrity contract — the real shipped data/.
+run_suite "tests/prod-data.test.js" \
+  "node $PROJECT_DIR/tests/prod-data.test.js" \
+  /tmp/mh-proddata.out \
+  'RESULTS: [0-9]+ passed, [0-9]+ failed'
+
 # The public DOM suite needs jsdom, which lives in the lint-tools sandbox.
 if [ -d "$LINT_TOOLS/node_modules/jsdom" ]; then
   run_suite "tests/app-dom.test.js" \
@@ -203,6 +209,14 @@ if [ -f "$PROJECT_DIR/tests/admin.test.js" ]; then
       'RESULTS: [0-9]+ passed, [0-9]+ failed'
   fi
 fi
+
+# The AI assistant's own contract. It is a plain node script — the module
+# is loaded in a sandbox with a stubbed fetch, so no network and no
+# jsdom are needed.
+run_suite "tests/ai.test.js" \
+  "node $PROJECT_DIR/tests/ai.test.js" \
+  /tmp/mh-aitest.out \
+  'RESULTS: [0-9]+ passed, [0-9]+ failed'
 
 # Guard: the shipped password hash must match the real password, and the
 # old demo password must no longer open the panel.

@@ -12,6 +12,10 @@
     team: null,
     matches: [],
     stats: null,
+    fixture: null,
+    // The record's SHAPE — streaks, head-to-head rows and per-player
+    // numbers. Computed by the data layer over the played matches only.
+    extras: null,
     filters: { mode: "", event: "", result: "", year: "", query: "" },
     loaded: false,
   };
@@ -65,9 +69,24 @@
 
   // --- Match card -----------------------------------------------------------
 
+  // The word behind a one-letter result code: "W" -> "Win".
+  //
+  // The dictionary holds both — `resultW` is the letter used on the rail
+  // and in the form flags, `resultWin` is the word used in titles. Looking
+  // up "result" + "W" would return the letter, so the code is expanded
+  // first.
+  function resultCode(code) {
+    if (code === "W") return "Win";
+    if (code === "L") return "Loss";
+    if (code === "D") return "Draw";
+    return "";
+  }
+
   function renderMatch(m) {
     const l = lang();
-    const resultLabel = m.result ? t("result" + m.result) : "";
+    // The short code is the letter; the rail's word comes from the
+    // full-word key, so "W" is painted as "Win".
+    const resultWord = m.result ? t("result" + resultCode(m.result)) : "";
     const money = window.ArchiveData.formatMoney;
 
     let meta = "";
@@ -106,27 +125,67 @@
       ? '<span class="badge badge--mode">' + esc(modeLabel(m.mode)) + "</span>"
       : "";
 
+    // The result rail. The letter is the only text in the element, so a
+    // test (or a screen reader) reads "W". The full word is painted by CSS
+    // from the data-word attribute, so generated content cannot leak into
+    // the element's text.
     const resultBadge = m.result
       ? '<span class="match__result" data-r="' +
         esc(m.result) +
+        '" data-word="' +
+        esc(resultWord) +
         '" title="' +
-        esc(resultLabel) +
+        esc(resultWord) +
         '">' +
         esc(m.result) +
         "</span>"
-      : "";
+      : '<span class="match__result" data-r="" data-word="" aria-hidden="true">·</span>';
 
     const notes = m.notes
       ? '<p class="match__notes">' + esc(m.notes) + "</p>"
       : "";
 
-    const opponent = m.opponent ? esc(m.opponent) : "—";
-    const score = m.score ? esc(m.score) : "—";
+    // Round-by-round — the per-round winners for a round series. Only when
+    // the match actually records them. Each round is a chip that shows who
+    // won that round (NF or the opponent), with the round number.
+    let roundsHtml = "";
+    if (m.rounds && m.rounds.length) {
+      const roundChips = m.rounds
+        .map(function (r) {
+          const side = r.team === "NF" ? "nf" : "opp";
+          const word = r.team === "NF" ? t("roundNf") : t("roundOpp");
+          return (
+            '<span class="round-chip" data-side="' +
+            side +
+            '" title="' +
+            esc(t("roundWon") + " " + word) +
+            '"><span class="round-chip__num" aria-hidden="true">R' +
+            esc(r.round) +
+            '</span><span class="round-chip__team">' +
+            esc(word) +
+            "</span></span>"
+          );
+        })
+        .join("");
+      roundsHtml =
+        '<div class="match__rounds"><span class="round-chip__label">' +
+        esc(t("labelRounds")) +
+        '</span><span class="round-chip__list">' +
+        roundChips +
+        "</span></div>";
+    }
+
+    const opponent = m.opponent
+      ? '<span class="match__opponent">' + esc(m.opponent) + "</span>"
+      : '<span class="match__opponent" data-empty="true">—</span>';
+    const score = m.score
+      ? '<span class="match__score">' + esc(m.score) + "</span>"
+      : '<span class="match__score" data-empty="true">—</span>';
     const map = m.map ? esc(m.map) : "—";
 
     return (
       '<article class="match" data-result="' +
-      esc(m.result) +
+      esc(m.result || "none") +
       '" data-id="' +
       esc(m.id) +
       '">' +
@@ -144,13 +203,19 @@
       demoTag +
       "</h3>" +
       '<div class="match__scoreline">' +
-      '<span class="match__score">' +
+      '<span class="match__scorebox">' +
+      '<span class="visually-hidden">' +
+      esc(t("labelScore")) +
+      " </span>" +
       score +
       "</span>" +
       '<span class="match__vs">' +
       esc(t("vs")) +
       "</span>" +
-      '<span class="match__opponent">' +
+      '<span class="match__opponentbox">' +
+      '<span class="match__opponent-label">' +
+      esc(t("labelOpponent")) +
+      "</span>" +
       opponent +
       "</span>" +
       "</div>" +
@@ -162,11 +227,13 @@
       "</dd></div>" +
       meta +
       "</dl>" +
+      roundsHtml +
       notes +
       "</div>" +
       "</article>"
     );
   }
+
   // --- Filtering ------------------------------------------------------------
 
   // The calendar year of a match, taken from the ISO date string.
@@ -174,6 +241,15 @@
   // four characters are the year. No Date parsing, no timezone drift.
   function matchYear(m) {
     return String(m.date || "").slice(0, 4);
+  }
+
+  // The matches that have actually been played. A scheduled fixture is an
+  // announcement and never enters the log, the form strip, the chips or
+  // the statistics.
+  function playedMatches() {
+    return state.matches.filter(function (m) {
+      return m.status !== "scheduled";
+    });
   }
 
   // The query matches against the fields a player would actually type:
@@ -198,7 +274,7 @@
 
   function filteredMatches() {
     const f = state.filters;
-    return state.matches.filter(function (m) {
+    return playedMatches().filter(function (m) {
       if (f.mode && m.mode !== f.mode) return false;
       if (f.event && m.event !== f.event) return false;
       if (f.result && m.result !== f.result) return false;
@@ -416,7 +492,7 @@
     }
     // Recent form — the last 10 results, newest first.
     if (el.formRow) {
-      const recent = state.matches.slice(0, 10);
+      const recent = playedMatches().slice(0, 10);
       el.formRow.innerHTML = recent
         .map(function (m) {
           return (
@@ -459,7 +535,7 @@
 
     el.modeRail.innerHTML = modes
       .map(function (code, i) {
-        const rows = state.matches.filter(function (m) {
+        const rows = playedMatches().filter(function (m) {
           return m.mode === code;
         });
         const wins = rows.filter(function (m) {
@@ -596,12 +672,430 @@
     }
   }
 
+  // --- Roster + fixture ------------------------------------------------------
+
+  // The role label. The role key is derived from the role name, so
+  // "Sniper" reads the "roleSniper" string from the dictionary. A role
+  // with no dictionary entry falls back to the raw name, so a new role is
+  // still shown rather than rendering as a blank chip.
+  function roleLabel(role) {
+    if (!role) return "";
+    const key = "role" + role.charAt(0) + role.slice(1).toLowerCase();
+    const label = t(key);
+    if (label && label !== key) return label;
+    return role;
+  }
+
+  // One player card. A guest player is marked as such — a player who
+  // joined for one match is not a permanent member, and the page should
+  // not imply that they are.
+  function renderPlayer(p, index) {
+    const roles = p.roles && p.roles.length ? p.roles : p.role ? [p.role] : [];
+    const isGuest = p.status === "guest";
+    return (
+      '<li class="player' +
+      (isGuest ? " player--guest" : "") +
+      '">' +
+      '<span class="player__slot" aria-hidden="true">' +
+      String(index + 1).padStart(2, "0") +
+      "</span>" +
+      '<span class="player__name">' +
+      esc(p.name) +
+      "</span>" +
+      (roles.length
+        ? '<span class="player__role">' +
+          roles
+            .map(function (r) {
+              return esc(roleLabel(r));
+            })
+            .join(" · ") +
+          "</span>"
+        : "") +
+      (isGuest
+        ? '<span class="player__tag">' + esc(t("roleGuest")) + "</span>"
+        : "") +
+      "</li>"
+    );
+  }
+
+  // The published lineup. The names come straight from data/team.json and
+  // are the players' own handles — they are escaped, never translated and
+  // never rewritten.
+  function renderRoster() {
+    if (!el.rosterList) return;
+    const roster = (state.team && state.team.roster) || [];
+    if (!roster.length) {
+      el.rosterList.innerHTML =
+        '<li class="player player--empty">' + esc(t("rosterEmpty")) + "</li>";
+      return;
+    }
+    el.rosterList.innerHTML = roster.map(renderPlayer).join("");
+  }
+
+  // The next fixture — the announced match that has not been played.
+  //
+  // A fixture carries no score and no result, so it is drawn as a fixture
+  // board: what we know, and an explicit "to be announced" for what we do
+  // not. Inventing an opponent or a map would be a factual error, so the
+  // unknown fields say so.
+  function renderFixture() {
+    if (!el.fixture) return;
+    const m = state.fixture;
+    // The whole section disappears when there is no announced match. An
+    // empty "Up next" board would be a promise the archive cannot keep.
+    if (el.fixtureSection) el.fixtureSection.hidden = !m;
+    if (!m) {
+      el.fixture.innerHTML = "";
+      return;
+    }
+    const l = lang();
+    const money = window.ArchiveData.formatMoney;
+    const dateText = window.ArchiveData.formatDate(m.date, l);
+    const timeText = window.ArchiveData.formatTime(m.time, l);
+
+    function row(label, value, fallback) {
+      return (
+        '<div class="fixture__row">' +
+        '<dt class="fixture__label">' +
+        esc(label) +
+        "</dt>" +
+        '<dd class="fixture__value' +
+        (value ? "" : " fixture__value--tbd") +
+        '">' +
+        esc(value || fallback) +
+        "</dd>" +
+        "</div>"
+      );
+    }
+
+    // The lineup for this fixture. The roster on the team file is the
+    // standing squad; the fixture may name a different one — a random
+    // fourth player, for example — so the fixture's own list wins when
+    // it has one.
+    const lineup = m.roster && m.roster.length ? m.roster : [];
+    const lineupHtml = lineup.length
+      ? '<ul class="fixture__players">' +
+        lineup
+          .map(function (name, i) {
+            return (
+              '<li class="fixture__player' +
+              (name ? "" : " fixture__player--open") +
+              '">' +
+              '<span class="fixture__player-slot" aria-hidden="true">' +
+              String(i + 1).padStart(2, "0") +
+              "</span>" +
+              '<span class="fixture__player-name">' +
+              (name ? esc(name) : esc(t("playerSlot"))) +
+              "</span>" +
+              "</li>"
+            );
+          })
+          .join("") +
+        "</ul>"
+      : '<p class="state__body">' + esc(t("rosterEmpty")) + "</p>";
+
+    el.fixture.innerHTML =
+      '<div class="fixture__head">' +
+      '<span class="fixture__tag">' +
+      esc(t("fixturePending")) +
+      "</span>" +
+      '<span class="fixture__mode">' +
+      esc(modeLabel(m.mode)) +
+      "</span>" +
+      "</div>" +
+      '<div class="fixture__when">' +
+      '<span class="fixture__date">' +
+      esc(dateText) +
+      "</span>" +
+      (timeText
+        ? '<span class="fixture__time">' +
+          esc(t("fixtureStarts")) +
+          " " +
+          esc(timeText) +
+          "</span>"
+        : "") +
+      "</div>" +
+      '<h3 class="fixture__event">' +
+      esc(m.eventName || t("fixtureEventTbd")) +
+      "</h3>" +
+      '<dl class="fixture__rows">' +
+      row(t("fixtureOpponent"), m.opponent, t("fixtureOpponentTbd")) +
+      row(t("fixtureMap"), m.map, t("fixtureMapTbd")) +
+      row(t("fixtureEvent"), m.eventName, t("fixtureEventTbd")) +
+      row(
+        t("fixtureEntry"),
+        m.entryFee ? money(m.entryFee, l) : "",
+        t("fixtureNoPrize"),
+      ) +
+      row(
+        t("fixturePrize"),
+        m.prizePerWinner ? money(m.prizePerWinner, l) : "",
+        t("fixtureNoPrize"),
+      ) +
+      "</dl>" +
+      '<div class="fixture__lineup">' +
+      '<span class="fixture__lineup-label">' +
+      esc(t("fixtureLineup")) +
+      "</span>" +
+      lineupHtml +
+      "</div>" +
+      '<p class="fixture__note">' +
+      esc(t("fixturePendingNote")) +
+      "</p>";
+  }
+
+  // --- Form: the streaks ----------------------------------------------------
+  //
+  // The shape of the record. A streak is a run of consecutive results, and
+  // it is the number a team actually argues about — a 75% win rate is an
+  // average, a four-match win run is a story.
+  //
+  // Everything here comes from `extras.streaks`, which the data layer
+  // computes over the PLAYED matches only. A scheduled fixture is an
+  // announcement and never counts as a result.
+
+  // The word that describes the live run. A draw is not a win and not a
+  // loss, so it gets its own label rather than being folded into one.
+  function streakUnit(type) {
+    if (type === "W") return t("streakCurrentWin");
+    if (type === "L") return t("streakCurrentLoss");
+    if (type === "D") return t("streakCurrentDraw");
+    return "";
+  }
+
+  function renderStreaks() {
+    if (!el.streakGrid) return;
+    const extras = state.extras;
+    if (!extras || !extras.streaks) {
+      el.streakGrid.innerHTML = "";
+      return;
+    }
+    const s = extras.streaks;
+
+    function tile(label, value, unit, modifier) {
+      return (
+        '<div class="streak' +
+        (modifier ? " streak--" + modifier : "") +
+        '">' +
+        '<span class="streak__label">' +
+        esc(label) +
+        "</span>" +
+        '<span class="streak__value">' +
+        esc(value) +
+        (unit ? '<span class="streak__unit">' + esc(unit) + "</span>" : "") +
+        "</span>" +
+        "</div>"
+      );
+    }
+
+    let html = "";
+    // A run of one is not a streak — it is a single result. The board says
+    // so rather than dressing up one win as a streak.
+    if (s.currentCount >= 2 && s.currentType) {
+      html += tile(
+        t("streakCurrent"),
+        String(s.currentCount),
+        streakUnit(s.currentType),
+        "live",
+      );
+    } else {
+      html += tile(t("streakCurrent"), "—", "", "live");
+    }
+    html += tile(t("streakLongestWin"), String(s.longestWin), "", "plain");
+    html += tile(t("streakLongestLoss"), String(s.longestLoss), "", "plain");
+
+    el.streakGrid.innerHTML = html;
+
+    // The last five results, as a row of flags.
+    if (el.streakForm) {
+      const form = s.form || [];
+      if (!form.length) {
+        el.streakForm.innerHTML = "";
+      } else {
+        el.streakForm.innerHTML =
+          '<span class="streak-form__label">' +
+          esc(t("streakForm")) +
+          "</span>" +
+          '<span class="streak-form__row">' +
+          form
+            .map(function (r) {
+              return (
+                '<span class="form-dot" data-r="' +
+                esc(r) +
+                '" title="' +
+                esc(t("result" + r)) +
+                '">' +
+                esc(r) +
+                "</span>"
+              );
+            })
+            .join("") +
+          "</span>";
+      }
+    }
+  }
+
+  // --- Head to head ---------------------------------------------------------
+  //
+  // One row per opponent, with the record against them. Only opponents the
+  // archive actually names appear, so the board can never invent a team.
+  function renderHeadToHead() {
+    if (!el.h2hList) return;
+    const extras = state.extras;
+    const rows = (extras && extras.opponents) || [];
+
+    if (!rows.length) {
+      el.h2hList.innerHTML = "";
+      if (el.h2hEmpty) el.h2hEmpty.hidden = false;
+      return;
+    }
+    if (el.h2hEmpty) el.h2hEmpty.hidden = true;
+
+    const money = window.ArchiveData.formatMoney;
+    const l = lang();
+
+    el.h2hList.innerHTML = rows
+      .map(function (r) {
+        function flag(code, count) {
+          if (!count) return "";
+          return (
+            '<span class="h2h__flag" data-r="' +
+            code +
+            '" data-zero="false" title="' +
+            esc(t("result" + code)) +
+            '">' +
+            esc(count) +
+            "</span>"
+          );
+        }
+        // The stagger is applied by nth-child in the stylesheet, the same
+        // way the match cards land in sequence. No inline style is needed.
+        return (
+          '<div class="h2h__row">' +
+          '<span class="h2h__name">' +
+          esc(r.opponent) +
+          "</span>" +
+          '<span class="h2h__record">' +
+          flag("W", r.wins) +
+          flag("L", r.losses) +
+          flag("D", r.draws) +
+          "</span>" +
+          '<span class="h2h__prize">' +
+          (r.prize ? esc(money(r.prize, l)) : esc(t("noPrize"))) +
+          "</span>" +
+          "</div>"
+        );
+      })
+      .join("");
+  }
+
+  // --- Player analysis ------------------------------------------------------
+  //
+  // Each player's own record, counted from the lineups saved with the
+  // matches they played in.
+  //
+  // A player with no recorded lineup has NO personal record. The section
+  // says that plainly instead of showing a zero that reads like a loss —
+  // "0 matches played" is a statement about the archive, and "0 wins" is a
+  // statement about the player. Only one of those is true here.
+  function renderPlayerStats() {
+    if (!el.playerStats) return;
+    const extras = state.extras;
+    const rows = (extras && extras.players) || [];
+    // A player counts only if a match actually recorded them.
+    const recorded = rows.filter(function (p) {
+      return p.played > 0;
+    });
+
+    if (!recorded.length) {
+      el.playerStats.innerHTML = "";
+      if (el.playerEmpty) el.playerEmpty.hidden = false;
+      return;
+    }
+    if (el.playerEmpty) el.playerEmpty.hidden = true;
+
+    // The roles live on the team file, not on the match. The player rows
+    // are keyed by the lower-cased handle so a name typed with different
+    // capitalisation still finds its role.
+    const roster = (state.team && state.team.roster) || [];
+    function roleFor(name) {
+      const key = String(name || "").toLowerCase();
+      const p = roster.find(function (r) {
+        return String(r.name || "").toLowerCase() === key;
+      });
+      if (!p) return "";
+      const roles = p.roles && p.roles.length ? p.roles : [p.role];
+      return roles
+        .filter(Boolean)
+        .map(function (r) {
+          return roleLabel(r);
+        })
+        .join(" · ");
+    }
+
+    el.playerStats.innerHTML = recorded
+      .map(function (p, i) {
+        const role = roleFor(p.name);
+        const last = p.lastResult
+          ? '<span class="h2h__flag" data-r="' +
+            esc(p.lastResult) +
+            '" title="' +
+            esc(t("result" + p.lastResult)) +
+            '">' +
+            esc(p.lastResult) +
+            "</span>"
+          : "";
+        return (
+          '<article class="pstat">' +
+          '<div class="pstat__head">' +
+          '<span class="pstat__slot" aria-hidden="true">' +
+          String(i + 1).padStart(2, "0") +
+          "</span>" +
+          "<span>" +
+          '<span class="pstat__name">' +
+          esc(p.name) +
+          "</span>" +
+          (role ? '<span class="pstat__role">' + esc(role) + "</span>" : "") +
+          "</span>" +
+          "</div>" +
+          '<dl class="pstat__grid">' +
+          "<div><dt>" +
+          esc(t("playerAppearances")) +
+          "</dt><dd>" +
+          esc(p.played) +
+          "</dd></div>" +
+          "<div><dt>" +
+          esc(t("statWins")) +
+          "</dt><dd>" +
+          esc(p.wins) +
+          "</dd></div>" +
+          "<div><dt>" +
+          esc(t("playerWinRate")) +
+          "</dt><dd>" +
+          esc(p.winRate.toFixed(1)) +
+          "%</dd></div>" +
+          "</dl>" +
+          '<div class="pstat__last">' +
+          esc(t("playerLastResult")) +
+          last +
+          "</div>" +
+          "</article>"
+        );
+      })
+      .join("");
+  }
+
   function renderAll() {
     renderTeam();
+    renderRoster();
+    renderFixture();
     renderHero();
     renderModes();
     renderList();
     renderStats();
+    renderStreaks();
+    renderHeadToHead();
+    renderPlayerStats();
   }
 
   // --- Filters UI -----------------------------------------------------------
@@ -609,13 +1103,16 @@
   function buildChips() {
     if (!el.chipMode) return;
     const modes = window.ArchiveData.MODES;
+    // The chip counts describe the LOG, so they count played matches only.
+    // A scheduled fixture has no result and must not inflate a chip.
+    const played = playedMatches();
 
     let html =
       '<button class="chip" data-filter="mode" data-value="" aria-pressed="true">' +
       esc(t("filterAll")) +
       "</button>";
     modes.forEach(function (m) {
-      const count = state.matches.filter(function (x) {
+      const count = played.filter(function (x) {
         return x.mode === m;
       }).length;
       html +=
@@ -636,7 +1133,7 @@
         esc(t("filterAll")) +
         "</button>";
       events.forEach(function (e) {
-        const count = state.matches.filter(function (x) {
+        const count = played.filter(function (x) {
           return x.event === e;
         }).length;
         ev +=
@@ -658,7 +1155,7 @@
         esc(t("filterAll")) +
         "</button>";
       results.forEach(function (r) {
-        const count = state.matches.filter(function (x) {
+        const count = played.filter(function (x) {
           return x.result === r;
         }).length;
         rs +=
@@ -677,7 +1174,7 @@
       // The years come from the records themselves, newest first, so the
       // chip list never offers a year that has no matches.
       const years = [];
-      state.matches.forEach(function (m) {
+      played.forEach(function (m) {
         const y = matchYear(m);
         if (y && years.indexOf(y) === -1) years.push(y);
       });
@@ -690,7 +1187,7 @@
         esc(t("filterAll")) +
         "</button>";
       years.forEach(function (y) {
-        const count = state.matches.filter(function (x) {
+        const count = played.filter(function (x) {
           return matchYear(x) === y;
         }).length;
         ys +=
@@ -1114,6 +1611,13 @@
     el.statsGrid = $("statsGrid");
     el.breakdownModes = $("breakdownModes");
     el.breakdownEvents = $("breakdownEvents");
+    // The form board, the head-to-head board and the player analysis.
+    el.streakGrid = $("streakGrid");
+    el.streakForm = $("streakForm");
+    el.h2hList = $("h2hList");
+    el.h2hEmpty = $("h2hEmpty");
+    el.playerStats = $("playerStats");
+    el.playerEmpty = $("playerEmpty");
     // The board panel and the modes rail.
     el.boardMark = $("boardMark");
     el.boardName = $("boardName");
@@ -1128,6 +1632,9 @@
 
     el.teamAbout = $("teamAbout");
     el.teamTagline = $("teamTagline");
+    el.rosterList = $("rosterList");
+    el.fixture = $("fixture");
+    el.fixtureSection = $("next-match");
     el.footerYear = $("footerYear");
     el.contactWhatsapp = $("contactWhatsapp");
     el.contactEmail = $("contactEmail");
@@ -1143,6 +1650,8 @@
         state.team = data.team;
         state.matches = data.matches;
         state.stats = data.stats;
+        state.fixture = data.fixture;
+        state.extras = data.extras;
         state.loaded = true;
 
         if (el.skeleton) el.skeleton.hidden = true;
@@ -1167,4 +1676,19 @@
   } else {
     boot();
   }
+
+  // A tiny read-only seam for the test suite.
+  //
+  // The scheduled fixture is deliberately kept out of the public log, so
+  // the DOM alone can never show how an UNPLAYED card renders. The empty
+  // score treatment ("—", never 0) is a correctness rule about the card,
+  // and a rule with no test is a rule that quietly breaks. This exposes
+  // the one pure renderer so the card can be rendered from a fixture
+  // record that is not in the published list.
+  //
+  // It returns a string and touches no state: the app still only reads
+  // the committed JSON, and nothing here can write to the archive.
+  window.ArchiveApp = {
+    renderMatchForTest: renderMatch,
+  };
 })();

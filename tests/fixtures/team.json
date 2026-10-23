@@ -1,0 +1,31 @@
+{
+  "schemaVersion": 2,
+  "name": "NightForge",
+  "tagline": "Free Fire MAX competitive roster",
+  "taglineHi": "Free Fire MAX प्रतिस्पर्धा टीम",
+  "about": "NightForge is a Free Fire MAX roster that plays Clash Squad, Battle Royale and Lone Wolf tournaments, scrims and qualifiers. This is the complete match archive — every result, every entry fee, every prize.",
+  "aboutHi": "NightForge एक Free Fire MAX टीम है जो Clash Squad, Battle Royale और Lone Wolf टूर्नामेंट, स्क्रिम तथा क्वालिफ़ायर खेलती है। यह पूरा मैच रिकॉर्ड है — हर नतीजा, हर एंट्री फीस, हर इनाम।",
+  "city": "Delhi, India",
+  "email": "hello@nightforge.io",
+  "whatsapp": "919999999999",
+  "instagram": "",
+  "youtube": "",
+  "logoText": "NF",
+  "roster": [
+    {
+      "name": "TQG.KΛIZEN07",
+      "roles": ["Sniper", "IGL"],
+      "status": "core"
+    },
+    {
+      "name": "ASTROO!!",
+      "roles": ["Supporter"],
+      "status": "core"
+    },
+    {
+      "name": "TQG.ZYOTO17",
+      "roles": ["Rusher"],
+      "status": "core"
+    }
+  ]
+}

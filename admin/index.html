@@ -50,6 +50,120 @@
       </header>
 
       <div class="admin-body">
+        <!-- ---------- AI ASSISTANT ---------- -->
+        <section class="admin-section admin-section--ai">
+          <div class="admin-toolbar">
+            <h2 class="admin-heading">AI match assistant</h2>
+            <span class="ai-badge">Draft only</span>
+          </div>
+          <p class="admin-help">
+            Describe a match in plain language and the assistant drafts the
+            record for you. It fills the editor below — nothing is saved until
+            you press <strong>Save match</strong>, and it can never publish on
+            its own.
+          </p>
+
+          <div class="publish-grid">
+            <div class="publish-card">
+              <h3 class="publish-card__title">1 · Connect</h3>
+              <p class="admin-help">
+                Any OpenAI-compatible endpoint works — OpenAI, OpenRouter, Groq,
+                Together, or a local Ollama. The key stays in this tab only. It
+                is never written to disk or to browser storage.
+              </p>
+
+              <label class="field">
+                <span>Provider</span>
+                <select id="aiPreset"></select>
+              </label>
+
+              <label class="field">
+                <span>Base URL</span>
+                <input
+                  type="url"
+                  id="aiBaseUrl"
+                  placeholder="https://api.openai.com/v1"
+                  spellcheck="false"
+                  autocomplete="off"
+                />
+              </label>
+
+              <label class="field">
+                <span>Model</span>
+                <input
+                  type="text"
+                  id="aiModel"
+                  placeholder="gpt-4o-mini"
+                  spellcheck="false"
+                  autocomplete="off"
+                />
+              </label>
+
+              <label class="field">
+                <span>API key</span>
+                <input
+                  type="password"
+                  id="aiKey"
+                  class="pin-input"
+                  placeholder="sk-…"
+                  autocomplete="off"
+                />
+              </label>
+              <div class="publish-card__actions">
+                <button id="btnAiTest" class="btn btn--secondary" type="button">
+                  Test connection
+                </button>
+              </div>
+              <p
+                id="aiConnectStatus"
+                class="admin-help"
+                role="status"
+                aria-live="polite"
+              ></p>
+            </div>
+
+            <div class="publish-card">
+              <h3 class="publish-card__title">2 · Describe the match</h3>
+              <p class="admin-help">
+                Write it the way you would say it. The assistant reads the
+                archive's current totals, so it can work out the net money and
+                the running record for you.
+              </p>
+              <label class="field">
+                <span>What happened?</span>
+                <textarea
+                  id="aiPrompt"
+                  rows="4"
+                  placeholder="Won 3-1 against Team Velocity in the TEAM QUANTUM GAMING Cup on 21 Oct, Clash Squad on Bermuda. Entry was 48 per team, we won 448."
+                ></textarea>
+              </label>
+              <div class="publish-card__actions">
+                <button id="btnAiDraft" class="btn btn--primary" type="button">
+                  Draft the record
+                </button>
+                <button
+                  id="btnAiSample"
+                  class="btn btn--secondary"
+                  type="button"
+                >
+                  Use an example
+                </button>
+              </div>
+              <p
+                id="aiStatus"
+                class="admin-help"
+                role="status"
+                aria-live="polite"
+              ></p>
+            </div>
+          </div>
+
+          <div class="ai-math" id="aiMath" hidden>
+            <h3 class="ai-math__title">What the assistant worked out</h3>
+            <dl class="ai-math__grid" id="aiMathGrid"></dl>
+          </div>
+        </section>
+
         <!-- ---------- RECORDS ---------- -->
         <section class="admin-section">
           <div class="admin-toolbar">
@@ -182,6 +296,20 @@
               <span>YouTube (handle)</span>
               <input type="text" id="teamYoutube" placeholder="nightforge" />
             </label>
+            <label class="field field--wide">
+              <span>Lineup — one player per line</span>
+              <textarea
+                id="teamRoster"
+                rows="4"
+                placeholder="TQG.KΛIZEN07 | Sniper, IGL&#10;ASTROO!! | Supporter&#10;TQG.ZYOTO17 | Rusher"
+              ></textarea>
+            </label>
+            <p class="admin-help">
+              Format: <code>Name | Role, Role</code>. Add
+              <code>| guest</code> at the end for a player who joined for one
+              match only. Leave a line empty for a slot that is still open.
+            </p>
+            <p id="teamRosterError" class="pin-error" role="alert" hidden></p>
             <div class="admin-toolbar">
               <button type="submit" class="btn btn--primary">
                 Save team details
@@ -204,6 +332,17 @@
             <input type="date" id="editDate" required />
           </label>
           <label class="field">
+            <span>Start time</span>
+            <input type="time" id="editTime" />
+          </label>
+        </div>
+
+        <div class="field-row">
+          <label class="field">
+            <span>Status *</span>
+            <select id="editStatus"></select>
+          </label>
+          <label class="field">
             <span>Result *</span>
             <select id="editResult"></select>
           </label>
@@ -219,26 +358,19 @@
             <select id="editEvent"></select>
           </label>
         </div>
-
         <label class="field">
-          <span>Event name *</span>
+          <span>Event name</span>
           <input
             type="text"
             id="editEventName"
-            placeholder="NightForge Weekly Cup #13"
-            required
+            placeholder="TEAM QUANTUM GAMING Cup #13"
           />
         </label>
 
         <div class="field-row">
           <label class="field">
-            <span>Opponent *</span>
-            <input
-              type="text"
-              id="editOpponent"
-              placeholder="Team Velocity"
-              required
-            />
+            <span>Opponent</span>
+            <input type="text" id="editOpponent" placeholder="Team Velocity" />
           </label>
           <label class="field">
             <span>Map</span>
@@ -261,6 +393,26 @@
               placeholder="1"
             />
           </label>
+        </div>
+
+        <!-- Round-by-round. Only for a played round-series (Clash Squad /
+             Lone Wolf). The owner records who won each round; the card shows
+             the sequence instead of a bare aggregate score. -->
+        <div class="field field--wide" id="roundsEditor" hidden>
+          <span>Rounds</span>
+          <p class="admin-help">
+            Record who won each round. Pick the side, then press Add.
+          </p>
+          <div class="rounds-builder">
+            <select id="editRoundTeam" class="rounds-select">
+              <option value="NF">TQ (us)</option>
+              <option value="OPP">Opponent</option>
+            </select>
+            <button type="button" id="btnAddRound" class="btn btn--secondary">
+              + Add round
+            </button>
+          </div>
+          <div class="rounds-list" id="roundsList"></div>
         </div>
 
         <div class="field-row">
@@ -287,6 +439,30 @@
         </div>
 
         <label class="field">
+          <span>Prize per winner (₹) — for a scheduled match</span>
+          <input
+            type="number"
+            id="editPrizePerWinner"
+            min="0"
+            step="1"
+            placeholder="112"
+          />
+        </label>
+
+        <label class="field field--wide">
+          <span>Lineup — one in-game name per line</span>
+          <textarea
+            id="editRoster"
+            rows="3"
+            placeholder="TQG.KΛIZEN07&#10;ASTROO!!&#10;TQG.ZYOTO17"
+          ></textarea>
+        </label>
+        <p class="admin-help">
+          Leave a line empty for a player who has not been named yet. The public
+          page shows that slot as open rather than hiding it.
+        </p>
+
+        <label class="field">
           <span>Notes</span>
           <textarea
             id="editNotes"
@@ -311,6 +487,7 @@
       </form>
     </dialog>
 
+    <script src="js/ai.js"></script>
     <script src="js/admin.js"></script>
   </body>
 </html>

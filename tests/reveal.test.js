@@ -30,8 +30,8 @@ const i18nJs = rd("js/i18n.js");
 const dataJs = rd("js/data.js");
 const appJs = rd("js/app.js");
 
-const teamData = JSON.parse(rd("data/team.json"));
-const matchData = JSON.parse(rd("data/matches.json"));
+const teamData = JSON.parse(rd("tests/fixtures/team.json"));
+const matchData = JSON.parse(rd("tests/fixtures/matches.json"));
 
 let pass = 0;
 let fail = 0;

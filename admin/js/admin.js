@@ -49,6 +49,27 @@
   };
   const EVENTS = ["Tournament", "Scrim", "Qualifier", "Showmatch", "Other"];
   const RESULTS = ["W", "L", "D"];
+  // The in-game roles a NightForge player can hold. The list is closed on
+  // purpose — the public page renders a role as a chip, and an open list
+  // would let a typo become a chip that means nothing.
+  const ROLES = [
+    "IGL",
+    "Sniper",
+    "Rusher",
+    "Supporter",
+    "Scout",
+    "Anchor",
+    "Fragger",
+    "Flex",
+  ];
+  // A record is either a result ("completed") or an announcement
+  // ("scheduled"). A scheduled match has no score and no result, and it
+  // is excluded from every statistic on the public page.
+  const STATUSES = ["completed", "scheduled"];
+  const STATUS_LABELS = {
+    completed: "Completed — the match has been played",
+    scheduled: "Scheduled — the match is announced but not played",
+  };
 
   // The GitHub coordinates used by the Publish button. They are public
   // information — the repository is public — and only the token is secret.
@@ -62,6 +83,8 @@
   let working = []; // The records being edited.
   let team = {};
   let dirty = false;
+  // The rounds being edited in the dialog, as { team, round } entries.
+  let editRounds = [];
 
   const el = {};
 
@@ -322,18 +345,25 @@
 
   function renderCounts() {
     if (!el.itemCount) return;
-    const wins = working.filter(function (m) {
+    const played = working.filter(function (m) {
+      return m.status !== "scheduled";
+    });
+    const wins = played.filter(function (m) {
       return m.result === "W";
     }).length;
+    const scheduled = working.length - played.length;
+    // The count describes the RECORD and the ANNOUNCEMENTS separately, so
+    // a pending fixture is never read as a played match.
     el.itemCount.textContent =
-      working.length +
-      " records · " +
+      played.length +
+      " played · " +
       wins +
       " wins · " +
-      working.filter(function (m) {
+      played.filter(function (m) {
         return m.demo;
       }).length +
-      " sample";
+      " sample" +
+      (scheduled > 0 ? " · " + scheduled + " scheduled" : "");
   }
 
   function renderList() {
@@ -348,22 +378,32 @@
     const sorted = working.slice().sort(function (a, b) {
       return String(b.date || "").localeCompare(String(a.date || ""));
     });
-
     el.itemList.innerHTML = sorted
       .map(function (m, i) {
         const demoTag = m.demo ? ' <span class="row-tag">Sample</span>' : "";
+        const scheduled = m.status === "scheduled";
+        // A scheduled record has no result, so the badge says "upcoming"
+        // instead of showing a dash that reads like a missing value.
+        const resultBadge = scheduled
+          ? '<span class="row__badge row__badge--scheduled">Upcoming</span>'
+          : '<span class="row__badge row__badge--' +
+            esc(m.result || "D") +
+            '">' +
+            esc(m.result || "—") +
+            "</span>";
+        const when = [m.date || "—", m.time || ""].filter(Boolean).join(" · ");
         return (
           '<div class="row" data-id="' +
           esc(m.id) +
           '">' +
           '<div class="row__main">' +
           '<div class="row__title">' +
-          esc(m.eventName || "(no event name)") +
+          esc(m.eventName || m.opponent || "(no event name)") +
           demoTag +
           "</div>" +
           '<div class="row__meta">' +
           '<span class="row__date">' +
-          esc(m.date || "—") +
+          esc(when) +
           "</span>" +
           '<span class="row__badge">' +
           esc(m.mode ? m.mode + " — " + (MODE_LABELS[m.mode] || m.mode) : "—") +
@@ -371,16 +411,16 @@
           '<span class="row__badge">' +
           esc(m.event || "—") +
           "</span>" +
-          '<span class="row__badge row__badge--' +
-          esc(m.result || "D") +
-          '">' +
-          esc(m.result || "—") +
-          "</span>" +
+          resultBadge +
           '<span class="row__fee">₹' +
           esc(m.entryFee || 0) +
           " fee · ₹" +
           esc(m.prize || 0) +
-          " prize</span>" +
+          " prize" +
+          (m.prizePerWinner
+            ? " · ₹" + esc(m.prizePerWinner) + " per winner"
+            : "") +
+          "</span>" +
           "</div>" +
           "</div>" +
           '<div class="row__actions">' +
@@ -409,6 +449,70 @@
     el.teamWhatsapp.value = team.whatsapp || "";
     el.teamInstagram.value = team.instagram || "";
     el.teamYoutube.value = team.youtube || "";
+    el.teamRoster.value = (team.roster || []).map(writeRosterLine).join("\n");
+  }
+
+  // One player as a single line of the lineup textarea.
+  //
+  //   TQG.KΛIZEN07 | Sniper, IGL
+  //   ASTROO!! | Supporter
+  //   Someone | Rusher | guest
+  function writeRosterLine(p) {
+    const roles = (p.roles && p.roles.length ? p.roles : p.role ? [p.role] : [])
+      .filter(Boolean)
+      .join(", ");
+    const tail = p.status === "guest" ? " | guest" : "";
+    return roles ? p.name + " | " + roles + tail : p.name;
+  }
+
+  // The lineup textarea into an array of player records.
+  //
+  // The format is "Name | Role, Role [| guest]". A player with no role
+  // is still a player — a name on its own line is valid. An unknown role
+  // is an error, because the public page renders a role as a chip and a
+  // typo would become a chip that means nothing.
+  function readRosterLines(text) {
+    const raw = String(text == null ? "" : text).replace(/\r\n/g, "\n");
+    const lines = raw.split("\n");
+    if (lines.length && lines[lines.length - 1] === "") lines.pop();
+    const players = [];
+    for (let i = 0; i < lines.length; i++) {
+      const line = lines[i].trim();
+      if (!line) continue;
+      const parts = line.split("|").map(function (p) {
+        return p.trim();
+      });
+      const name = parts[0];
+      if (!name) continue;
+      const roles = [];
+      let status = "core";
+      for (let j = 1; j < parts.length; j++) {
+        const chunk = parts[j];
+        if (!chunk) continue;
+        if (chunk.toLowerCase() === "guest") {
+          status = "guest";
+          continue;
+        }
+        chunk.split(",").forEach(function (r) {
+          const role = r.trim();
+          if (!role) return;
+          if (ROLES.indexOf(role) === -1) {
+            throw new Error(
+              "Line " +
+                (i + 1) +
+                ": unknown role “" +
+                role +
+                "”. Use one of: " +
+                ROLES.join(", ") +
+                ".",
+            );
+          }
+          if (roles.indexOf(role) === -1) roles.push(role);
+        });
+      }
+      players.push({ name: name, roles: roles, status: status });
+    }
+    return players;
   }
 
   // --- Editing --------------------------------------------------------------
@@ -419,11 +523,13 @@
     return "m-" + Date.now().toString(36);
   }
 
-  function openEditor(record) {
+  function openEditor(record, prefill) {
     const isNew = !record;
-    const m = record || {
+    const base = record || {
       id: newId(),
       date: "",
+      time: "",
+      status: "completed",
       mode: "CS",
       event: "Tournament",
       eventName: "",
@@ -434,12 +540,28 @@
       placement: "",
       entryFee: "",
       prize: "",
+      prizePerWinner: "",
+      roster: [],
       notes: "",
       demo: false,
     };
 
+    // A prefill is a DRAFT — the assistant's suggestion. It fills the
+    // fields the assistant worked out, and anything it left blank stays
+    // blank so the owner has to complete it by hand. The id is always a
+    // fresh one: a drafted record is a new record, never an edit of an
+    // existing one.
+    const m = prefill
+      ? Object.assign({}, base, prefill, {
+          id: base.id,
+          demo: false,
+        })
+      : base;
+
     el.editId.value = m.id;
     el.editDate.value = m.date || "";
+    el.editTime.value = m.time || "";
+    el.editStatus.value = m.status === "scheduled" ? "scheduled" : "completed";
     el.editMode.value = m.mode || "CS";
     el.editEvent.value = m.event || "Tournament";
     el.editEventName.value = m.eventName || "";
@@ -450,32 +572,161 @@
     el.editPlacement.value = m.placement == null ? "" : m.placement;
     el.editEntryFee.value = m.entryFee || "";
     el.editPrize.value = m.prize || "";
+    el.editPrizePerWinner.value = m.prizePerWinner || "";
+    el.editRoster.value = (m.roster || []).join("\n");
     el.editNotes.value = m.notes || "";
     el.editDemo.checked = m.demo === true;
+
+    // Load the round score into the editor.
+    editRounds = Array.isArray(m.rounds) ? m.rounds.slice() : [];
+    renderRounds();
+    applyStatusToFields();
 
     el.dialogTitle.textContent = isNew ? "Add match" : "Edit match";
     el.editDialog.showModal();
     el.editEventName.focus();
   }
 
+  // Read the lineup textarea into an array of in-game names.
+  //
+  // AN EMPTY LINE IS MEANINGFUL. It is an open slot — a player who has
+  // not been named yet. The trailing empty line is the one that matters
+  // most: the unnamed fourth player in a four-player lineup.
+  //
+  // So the parser does NOT strip trailing blanks. A lineup of three
+  // names and an open slot round-trips exactly: the textarea shows
+  // "A\nB\nC\n", and it comes back as ["A", "B", "C", ""]. The only
+  // thing that is collapsed is a run of blank lines, so the array
+  // mirrors what the public page draws.
+  //
+  // Stripping the trailing blank here would silently delete the open
+  // slot the first time the owner saved the fixture — and the public
+  // page would then claim a three-player lineup for a four-player
+  // match.
+  function readRoster(text) {
+    const raw = String(text == null ? "" : text).replace(/\r\n/g, "\n");
+    // An entirely empty textarea is an empty lineup, not one open slot.
+    if (!raw.trim()) return [];
+    const out = [];
+    raw.split("\n").forEach(function (line) {
+      const name = line.trim();
+      // Collapse a run of blank lines into a single open slot.
+      if (name === "" && out.length > 0 && out[out.length - 1] === "") return;
+      out.push(name);
+    });
+    return out;
+  }
+
+  // Turn the result and score fields on or off depending on the status.
+  //
+  // A scheduled match is an announcement. It has no result and no score
+  // yet, and letting the owner type one would put a phantom win into
+  // the published archive.
+  function applyStatusToFields() {
+    const scheduled = el.editStatus.value === "scheduled";
+    el.editResult.disabled = scheduled;
+    el.editScore.disabled = scheduled;
+    el.editResult.required = !scheduled;
+    if (scheduled) {
+      el.editResult.value = "";
+      el.editScore.value = "";
+    }
+    updateRoundsVisibility();
+  }
+
+  // Whether the match is a round-series format (CS/LW) and is not scheduled.
+  function roundsApplicable() {
+    const scheduled = el.editStatus.value === "scheduled";
+    const mode = el.editMode.value;
+    return !scheduled && (mode === "CS" || mode === "LW");
+  }
+
+  // Show/hide the rounds builder based on mode and status. A scheduled
+  // match has no rounds — the result is still undefined.
+  function updateRoundsVisibility() {
+    if (!el.roundsEditor) return;
+    const show = roundsApplicable();
+    el.roundsEditor.hidden = !show;
+    if (!show) {
+      editRounds = [];
+      renderRounds();
+    }
+  }
+
+  function renderRounds() {
+    if (!el.roundsList) return;
+    if (!editRounds.length) {
+      el.roundsList.innerHTML = "";
+      return;
+    }
+    el.roundsList.innerHTML = editRounds
+      .map(function (r, i) {
+        const side = r.team === "NF" ? "nf" : "opp";
+        const label = r.team === "NF" ? "TQ" : "Opponent";
+        return (
+          '<div class="round-chip-admin" data-side="' +
+          side +
+          '"><span class="round-chip-admin__num">R' +
+          esc(r.round) +
+          '</span><span class="round-chip-admin__team">' +
+          esc(label) +
+          '</span><button type="button" class="round-chip-admin__remove" data-round="' +
+          i +
+          '" aria-label="Remove round">×</button></div>'
+        );
+      })
+      .join("");
+  }
+
+  function addRound() {
+    const team = el.editRoundTeam.value;
+    const round = editRounds.length + 1;
+    editRounds.push({ team: team, round: round });
+    renderRounds();
+  }
+
+  function removeRound(index) {
+    editRounds.splice(index, 1);
+    // Renumber so the rounds stay 1..N in order.
+    editRounds.forEach(function (r, i) {
+      r.round = i + 1;
+    });
+    renderRounds();
+  }
+
   function readEditor() {
+    const scheduled = el.editStatus.value === "scheduled";
     return {
       id: el.editId.value || newId(),
       date: el.editDate.value.trim(),
+      time: el.editTime.value.trim(),
+      status: scheduled ? "scheduled" : "completed",
       mode: el.editMode.value,
       event: el.editEvent.value,
       eventName: el.editEventName.value.trim(),
       map: el.editMap.value.trim(),
       opponent: el.editOpponent.value.trim(),
-      score: el.editScore.value.trim(),
-      result: el.editResult.value,
+      score: scheduled ? "" : el.editScore.value.trim(),
+      result: scheduled ? "" : el.editResult.value,
       placement:
         el.editPlacement.value === "" ? null : Number(el.editPlacement.value),
       entryFee:
         el.editEntryFee.value === "" ? 0 : Number(el.editEntryFee.value),
       prize: el.editPrize.value === "" ? 0 : Number(el.editPrize.value),
+      prizePerWinner:
+        el.editPrizePerWinner.value === ""
+          ? 0
+          : Number(el.editPrizePerWinner.value),
+      roster: readRoster(el.editRoster.value),
       notes: el.editNotes.value.trim(),
       demo: el.editDemo.checked,
+      format: roundsApplicable() ? "bo3" : "",
+      rounds: roundsApplicable() ? editRounds.slice() : [],
+      roundsTotal: roundsApplicable()
+        ? editRounds.filter(function (r) {
+            return r.team === "NF";
+          }).length
+        : 0,
     };
   }
 
@@ -483,17 +734,52 @@
     if (!m.date) return "Date is required.";
     if (!/^\d{4}-\d{2}-\d{2}$/.test(m.date))
       return "Date must be in YYYY-MM-DD format.";
-    if (!m.eventName) return "Event name is required.";
-    if (!m.opponent) return "Opponent is required.";
+    if (m.time && !/^\d{2}:\d{2}$/.test(m.time))
+      return "Start time must be in HH:MM format.";
     if (Number.isNaN(m.entryFee) || m.entryFee < 0)
       return "Entry fee must be zero or more.";
     if (Number.isNaN(m.prize) || m.prize < 0)
       return "Prize must be zero or more.";
+    if (Number.isNaN(m.prizePerWinner) || m.prizePerWinner < 0)
+      return "Prize per winner must be zero or more.";
     if (
       m.placement !== null &&
       (Number.isNaN(m.placement) || m.placement < 1)
     ) {
       return "Placement must be a positive whole number.";
+    }
+    // A played match needs a result and a name to be published under.
+    // A scheduled one does not — the opponent and the event name are
+    // announced later.
+
+    if (m.status !== "scheduled") {
+      if (!m.result) return "Result is required for a played match.";
+      if (!m.eventName) return "Event name is required for a played match.";
+      if (!m.opponent) return "Opponent is required for a played match.";
+    }
+    // Round score consistency. A series result must agree with the round
+    // count: a win needs the required number of rounds we took (2 for
+    // bo3, 3 for bo5), a loss needs the same from the opponent.
+    if (m.rounds && m.rounds.length) {
+      const target = m.format === "bo5" ? 3 : 2;
+      const nf = m.rounds.filter(function (r) {
+        return r.team === "NF";
+      }).length;
+      const opp = m.rounds.length - nf;
+      if (m.result === "W" && nf < target)
+        return (
+          "The round score does not add up to a win (need " +
+          target +
+          " rounds)."
+        );
+      if (m.result === "L" && opp < target)
+        return (
+          "The round score does not add up to a loss (opponent needs " +
+          target +
+          " rounds)."
+        );
+      if (nf >= target && opp >= target)
+        return "The round score cannot be a win for both sides.";
     }
     return null;
   }
@@ -558,12 +844,329 @@
     setStatus("Removed " + count + " sample records.", "ok");
   }
 
+  // --- AI assistant ---------------------------------------------------------
+
+  // The archive's own numbers, computed the same way the public page
+  // computes them, so the assistant reasons about the real record.
+  //
+  // The AI never sees the GitHub token and never writes a record. It fills
+  // the editor; the owner presses Save.
+  function aiContext() {
+    const played = working.filter(function (m) {
+      return m.status !== "scheduled";
+    });
+    const wins = played.filter(function (m) {
+      return m.result === "W";
+    }).length;
+    const losses = played.filter(function (m) {
+      return m.result === "L";
+    }).length;
+    const draws = played.filter(function (m) {
+      return m.result === "D";
+    }).length;
+    const decided = wins + losses;
+    const totalPrize = played.reduce(function (s, m) {
+      return s + (Number(m.prize) || 0);
+    }, 0);
+    const totalEntry = played.reduce(function (s, m) {
+      return s + (Number(m.entryFee) || 0);
+    }, 0);
+    return {
+      played: played.length,
+      wins: wins,
+      losses: losses,
+      draws: draws,
+      winRate: decided > 0 ? ((wins / decided) * 100).toFixed(1) : "0.0",
+      totalPrize: totalPrize,
+      totalEntry: totalEntry,
+      net: totalPrize - totalEntry,
+      roster: (team.roster || []).map(function (p) {
+        return p.name;
+      }),
+      recent: played.slice(0, 5).map(function (m) {
+        return (
+          (m.date || "?") +
+          " " +
+          (m.opponent || "unknown") +
+          " " +
+          (m.result || "?")
+        );
+      }),
+    };
+  }
+
+  // The numbers the assistant worked out, shown under the prompt.
+  //
+  // This is the "it did the maths" panel: the running totals BEFORE and
+  // AFTER the drafted match, so the owner can see the arithmetic without
+  // trusting a language model to have done it.
+  function renderAiMath(record) {
+    if (!el.aiMath || !el.aiMathGrid) return;
+    const before = aiContext();
+    if (!record) {
+      el.aiMath.hidden = true;
+      el.aiMathGrid.innerHTML = "";
+      return;
+    }
+
+    const isScheduled = record.status === "scheduled";
+    // A scheduled match changes no totals. Saying so is better than
+    // showing a row of zeroes that look like a mistake.
+    const afterPlayed = before.played + (isScheduled ? 0 : 1);
+    const afterWins =
+      before.wins + (!isScheduled && record.result === "W" ? 1 : 0);
+    const afterLosses =
+      before.losses + (!isScheduled && record.result === "L" ? 1 : 0);
+    const afterDraws =
+      before.draws + (!isScheduled && record.result === "D" ? 1 : 0);
+    const afterDecided = afterWins + afterLosses;
+    const afterRate =
+      afterDecided > 0 ? ((afterWins / afterDecided) * 100).toFixed(1) : "0.0";
+
+    // A played match adds its prize to the money. A scheduled match adds
+    // nothing — the prize is per-winner and depends on the result.
+    const afterPrize =
+      before.totalPrize + (isScheduled ? 0 : record.prize || 0);
+    const afterEntry =
+      before.totalEntry + (isScheduled ? 0 : record.entryFee || 0);
+    const afterNet = afterPrize - afterEntry;
+
+    const rows = [
+      ["Matches", before.played + " → " + afterPlayed],
+      ["Wins", before.wins + " → " + afterWins],
+      ["Win rate", before.winRate + "% → " + afterRate + "%"],
+      ["Prize money", "₹" + before.totalPrize + " → ₹" + afterPrize],
+      ["Entry fees", "₹" + before.totalEntry + " → ₹" + afterEntry],
+      ["Net earnings", "₹" + before.net + " → ₹" + afterNet],
+    ];
+
+    // The space between the term and its value is deliberate. The row is a
+    // flex line, so the whitespace is not painted — but it IS in the
+    // text content, and without it the panel reads "Matches8 → 9" to a
+    // screen reader and to any tool that reads the DOM.
+    el.aiMathGrid.innerHTML = rows
+      .map(function (r) {
+        return (
+          '<div class="ai-math__row"><dt>' +
+          esc(r[0]) +
+          '</dt> <dd class="mono">' +
+          esc(r[1]) +
+          "</dd></div>"
+        );
+      })
+      .join(" ");
+    el.aiMath.hidden = false;
+  }
+
+  // Fill the match editor with a drafted record. The editor is the review
+  // step: the owner reads every field before it is saved.
+  function applyAiRecord(record) {
+    if (!record) return;
+    openEditor(null, record);
+  }
+
+  function setAiStatus(message, kind) {
+    if (!el.aiStatus) return;
+    el.aiStatus.textContent = message;
+    el.aiStatus.className = "admin-help" + (kind ? " admin-help--" + kind : "");
+  }
+
+  function setAiConnectStatus(message, kind) {
+    if (!el.aiConnectStatus) return;
+    el.aiConnectStatus.textContent = message;
+    el.aiConnectStatus.className =
+      "admin-help" + (kind ? " admin-help--" + kind : "");
+  }
+
+  // Run the draft request. The button is disabled while the request is in
+  // flight, so a slow endpoint cannot be double-submitted.
+  function requestAiDraft() {
+    if (!window.NFAssistant) {
+      setAiStatus(
+        "The assistant script did not load. Reload the page.",
+        "error",
+      );
+      return;
+    }
+    const prompt = el.aiPrompt.value.trim();
+    if (!prompt) {
+      setAiStatus("Type what happened in the match first.", "error");
+      el.aiPrompt.focus();
+      return;
+    }
+
+    // The key is read from the field, and falls back to the copy the
+    // module holds for the session. The field is cleared after a
+    // successful draft so the key is not sitting on screen, but the
+    // next draft does not need it typed again.
+    const key = el.aiKey.value.trim() || window.NFAssistant.getKey();
+    const baseUrl = el.aiBaseUrl.value.trim();
+    const model = el.aiModel.value.trim();
+
+    if (!baseUrl) {
+      setAiStatus("Set the API base URL first.", "error");
+      el.aiBaseUrl.focus();
+      return;
+    }
+    // A local endpoint needs no key. Everything else does.
+    if (!key && !/localhost|127\.0\.0\.1/.test(baseUrl)) {
+      setAiStatus("Enter your API key first.", "error");
+      el.aiKey.focus();
+      return;
+    }
+
+    // The provider configuration is remembered for the session as soon as it
+    // is accepted — BEFORE the request goes out. A key that is correct but
+    // temporarily unreachable must not cost the owner a retype, and a failed
+    // request must not wipe the settings they just filled in. It stays in
+    // module memory only, and is dropped when the panel locks.
+    window.NFAssistant.setKey(key);
+    window.NFAssistant.setBaseUrl(baseUrl);
+    window.NFAssistant.setModel(model);
+
+    el.btnAiDraft.disabled = true;
+    el.btnAiDraft.textContent = "Drafting…";
+    setAiStatus("Asking the assistant…", "warn");
+    renderAiMath(null);
+
+    window.NFAssistant.draft({
+      apiKey: key,
+      baseUrl: baseUrl,
+      model: model,
+      message: prompt,
+      context: aiContext(),
+    })
+      .then(function (record) {
+        // The key is kept in the module for the session so the next draft
+        // does not need it typed again, but the field is cleared so it
+        // is not left sitting on screen.
+        window.NFAssistant.setKey(key);
+        window.NFAssistant.setBaseUrl(baseUrl);
+        window.NFAssistant.setModel(model);
+        el.aiKey.value = "";
+
+        renderAiMath(record);
+        applyAiRecord(record);
+        setAiStatus(
+          "Draft ready in the editor below. Read it, fix anything, then press Save match.",
+          "ok",
+        );
+      })
+      .catch(function (err) {
+        renderAiMath(null);
+        setAiStatus(err.message || "The draft failed.", "error");
+      })
+      .then(function () {
+        el.btnAiDraft.disabled = false;
+        el.btnAiDraft.textContent = "Draft the record";
+      });
+  }
+
+  // The connection test. It proves the base URL, the key and the model
+  // name work BEFORE the owner types a whole match report.
+  function requestAiTest() {
+    if (!window.NFAssistant) {
+      setAiConnectStatus(
+        "The assistant script did not load. Reload the page.",
+        "error",
+      );
+      return;
+    }
+    const key = el.aiKey.value.trim() || window.NFAssistant.getKey();
+    const baseUrl = el.aiBaseUrl.value.trim();
+    const model = el.aiModel.value.trim();
+
+    if (!baseUrl) {
+      setAiConnectStatus("Set the API base URL first.", "error");
+      el.aiBaseUrl.focus();
+      return;
+    }
+    if (!key && !/localhost|127\.0\.0\.1/.test(baseUrl)) {
+      setAiConnectStatus("Enter your API key first.", "error");
+      el.aiKey.focus();
+      return;
+    }
+
+    // Remembered before the request, on the same rule as the draft: a failed
+    // test must not cost the owner their key, URL and model.
+    window.NFAssistant.setKey(key);
+    window.NFAssistant.setBaseUrl(baseUrl);
+    window.NFAssistant.setModel(model);
+
+    el.btnAiTest.disabled = true;
+    el.btnAiTest.textContent = "Testing…";
+    setAiConnectStatus("Contacting the endpoint…", "warn");
+
+    window.NFAssistant.test({
+      apiKey: key,
+      baseUrl: baseUrl,
+      model: model,
+    })
+      .then(function (result) {
+        window.NFAssistant.setKey(key);
+        window.NFAssistant.setBaseUrl(baseUrl);
+        window.NFAssistant.setModel(model);
+        el.aiKey.value = "";
+        setAiConnectStatus(
+          "Connected. " + result.model + " answered: “" + result.reply + "”",
+          "ok",
+        );
+      })
+      .catch(function (err) {
+        setAiConnectStatus(err.message || "The connection failed.", "error");
+      })
+      .then(function () {
+        el.btnAiTest.disabled = false;
+        el.btnAiTest.textContent = "Test connection";
+      });
+  }
+
+  // Populate the provider dropdown and sync the base URL and model.
+  function applyAiPreset(id) {
+    if (!window.NFAssistant) return;
+    const preset = window.NFAssistant.presets.find(function (p) {
+      return p.id === id;
+    });
+    if (!preset) return;
+    el.aiBaseUrl.value = preset.baseUrl;
+    el.aiModel.value = preset.model;
+    el.aiKey.placeholder = preset.keyHint;
+    setAiConnectStatus(
+      preset.id === "ollama"
+        ? "Local model — no API key needed."
+        : "Set your key, then describe the match.",
+      "ok",
+    );
+  }
+
+  // The provider dropdown.
+  //
+  // The assistant is an optional extra. If its script has not loaded — a
+  // cached admin page, a failed request — the panel must still work, so
+  // every AI path is guarded rather than assumed.
+  function buildAiPresets() {
+    if (!el.aiPreset || !window.NFAssistant) return;
+    el.aiPreset.innerHTML = window.NFAssistant.presets
+      .map(function (p) {
+        return (
+          '<option value="' + esc(p.id) + '">' + esc(p.label) + "</option>"
+        );
+      })
+      .join("");
+    el.aiBaseUrl.value = window.NFAssistant.defaults.baseUrl;
+    el.aiModel.value = window.NFAssistant.defaults.model;
+  }
+
   // --- Export / publish -----------------------------------------------------
 
   // The exact bytes that should land in data/matches.json.
+  //
+  // SCHEMA 2. The version must match the committed file, or a publish
+  // would silently downgrade the published schema and drop the roster
+  // and the fixture fields.
   function buildMatchesFile() {
     const payload = {
-      schemaVersion: 1,
+      schemaVersion: 2,
       updatedAt: new Date().toISOString(),
       matches: working,
     };
@@ -572,9 +1175,10 @@
 
   // The exact bytes that should land in data/team.json.
   function buildTeamFile() {
-    return (
-      JSON.stringify(Object.assign({ schemaVersion: 1 }, team), null, 2) + "\n"
-    );
+    // schemaVersion is written LAST so a stale draft carrying
+    // schemaVersion: 1 cannot override the current schema.
+    const out = Object.assign({}, team, { schemaVersion: 2 });
+    return JSON.stringify(out, null, 2) + "\n";
   }
 
   function download(filename, content) {
@@ -759,6 +1363,10 @@
       // Dropping the token is what makes locking meaningful.
       sessionToken = null;
       el.tokenInput.value = "";
+      // The API key goes the same way — it is a secret, and a locked
+      // panel must not keep one in memory.
+      if (window.NFAssistant) window.NFAssistant.clearKey();
+      el.aiKey.value = "";
       el.adminPanel.hidden = true;
       el.pinGate.hidden = false;
       el.pinInput.focus();
@@ -777,10 +1385,58 @@
       el.editDialog.close();
     });
 
+    // Round-by-round builder.
+    if (el.btnAddRound) {
+      el.btnAddRound.addEventListener("click", addRound);
+    }
+    if (el.roundsList) {
+      el.roundsList.addEventListener("click", function (e) {
+        const btn = e.target.closest
+          ? e.target.closest(".round-chip-admin__remove")
+          : null;
+        if (btn) {
+          const i = Number(btn.getAttribute("data-round"));
+          if (!Number.isNaN(i)) removeRound(i);
+        }
+      });
+    }
+
     el.btnExportMatches.addEventListener("click", exportMatches);
     el.btnExportTeam.addEventListener("click", exportTeam);
     el.btnPublish.addEventListener("click", publishToGitHub);
     el.btnRemoveDemo.addEventListener("click", removeDemoRecords);
+
+    // --- AI assistant ------------------------------------------------------
+    if (el.aiPreset) {
+      el.aiPreset.addEventListener("change", function () {
+        applyAiPreset(el.aiPreset.value);
+      });
+    }
+    if (el.btnAiDraft) {
+      el.btnAiDraft.addEventListener("click", requestAiDraft);
+    }
+    if (el.btnAiTest) {
+      el.btnAiTest.addEventListener("click", requestAiTest);
+    }
+    if (el.btnAiSample) {
+      el.btnAiSample.addEventListener("click", function () {
+        el.aiPrompt.value =
+          "Won 3-1 against Team Velocity in the TEAM QUANTUM GAMING Cup on 21 October. " +
+          "Clash Squad on Bermuda. Entry fee was 48 in total and we won 448, so 112 each.";
+        el.aiPrompt.focus();
+        setAiStatus("Example loaded. Press Draft the record.", "ok");
+      });
+    }
+    // Ctrl/Cmd+Enter drafts from the prompt box, because a long note is
+    // much easier to write without reaching for the mouse.
+    if (el.aiPrompt) {
+      el.aiPrompt.addEventListener("keydown", function (e) {
+        if ((e.metaKey || e.ctrlKey) && e.key === "Enter") {
+          e.preventDefault();
+          requestAiDraft();
+        }
+      });
+    }
 
     el.btnResetAll.addEventListener("click", function () {
       if (
@@ -802,8 +1458,27 @@
 
     el.teamForm.addEventListener("submit", function (e) {
       e.preventDefault();
+
+      // The lineup is parsed first. A bad role must not be allowed to
+      // save a half-written team file, and the error has to say WHICH
+      // line is wrong.
+      let roster;
+      try {
+        roster = readRosterLines(el.teamRoster.value);
+      } catch (err) {
+        el.teamRosterError.textContent = err.message;
+        el.teamRosterError.hidden = false;
+        el.teamRoster.focus();
+        return;
+      }
+      el.teamRosterError.hidden = true;
+
+      // The roster is carried over from the loaded team object rather
+      // than rebuilt from scratch. Dropping it here would erase the
+      // published lineup the first time the owner saved any other team
+      // detail.
       team = {
-        schemaVersion: 1,
+        schemaVersion: 2,
         name: el.teamName.value.trim(),
         tagline: el.teamTagline.value.trim(),
         taglineHi: el.teamTaglineHi.value.trim(),
@@ -815,6 +1490,7 @@
         instagram: el.teamInstagram.value.trim(),
         youtube: el.teamYoutube.value.trim(),
         logoText: el.teamName.value.trim().slice(0, 2).toUpperCase() || "NF",
+        roster: roster,
       };
       saveLocal();
       setStatus(
@@ -904,11 +1580,15 @@
     el.teamWhatsapp = $("teamWhatsapp");
     el.teamInstagram = $("teamInstagram");
     el.teamYoutube = $("teamYoutube");
+    el.teamRoster = $("teamRoster");
+    el.teamRosterError = $("teamRosterError");
     el.editDialog = $("editDialog");
     el.editForm = $("editForm");
     el.dialogTitle = $("dialogTitle");
     el.editId = $("editId");
     el.editDate = $("editDate");
+    el.editTime = $("editTime");
+    el.editStatus = $("editStatus");
     el.editMode = $("editMode");
     el.editEvent = $("editEvent");
     el.editEventName = $("editEventName");
@@ -919,10 +1599,34 @@
     el.editPlacement = $("editPlacement");
     el.editEntryFee = $("editEntryFee");
     el.editPrize = $("editPrize");
+    el.editPrizePerWinner = $("editPrizePerWinner");
+
+    el.editRoster = $("editRoster");
     el.editNotes = $("editNotes");
     el.editDemo = $("editDemo");
     el.editError = $("editError");
     el.btnCancelEdit = $("btnCancelEdit");
+    // Round-by-round builder.
+    el.roundsEditor = $("roundsEditor");
+    el.editRoundTeam = $("editRoundTeam");
+    el.btnAddRound = $("btnAddRound");
+    el.roundsList = $("roundsList");
+
+    // The AI assistant.
+    el.aiPreset = $("aiPreset");
+    el.aiBaseUrl = $("aiBaseUrl");
+    el.aiModel = $("aiModel");
+    el.aiKey = $("aiKey");
+    el.aiPrompt = $("aiPrompt");
+    el.aiStatus = $("aiStatus");
+    el.aiConnectStatus = $("aiConnectStatus");
+    el.aiMath = $("aiMath");
+    el.aiMathGrid = $("aiMathGrid");
+    el.btnAiDraft = $("btnAiDraft");
+    el.btnAiTest = $("btnAiTest");
+    el.btnAiSample = $("btnAiSample");
+
+    buildAiPresets();
 
     // Populate the mode and event selects from the shared constants, so
     // the admin and the site cannot drift apart.
@@ -941,6 +1645,21 @@
     el.editResult.innerHTML = RESULTS.map(function (r) {
       return '<option value="' + esc(r) + '">' + esc(r) + "</option>";
     }).join("");
+    el.editStatus.innerHTML = STATUSES.map(function (s) {
+      return (
+        '<option value="' +
+        esc(s) +
+        '">' +
+        esc(STATUS_LABELS[s] || s) +
+        "</option>"
+      );
+    }).join("");
+
+    // Switching the status switches the result and score fields on and
+    // off, so a scheduled match can never carry a result by accident.
+    el.editStatus.addEventListener("change", applyStatusToFields);
+    // Changing the mode changes whether rounds apply (CS/LW only).
+    el.editMode.addEventListener("change", updateRoundsVisibility);
 
     wire();
   }

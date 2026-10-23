@@ -237,6 +237,140 @@ code {
   line-height: 1.5;
 }
 
+/* --- AI assistant --------------------------------------------------------- */
+/* The AI section is the panel's headline feature, so it gets the accent
+   treatment — a cut corner and an ember edge — to mark it apart from the
+   plain publish cards. */
+
+.admin-section--ai {
+  position: relative;
+  padding: 20px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background:
+    linear-gradient(var(--card), var(--card)) padding-box,
+    linear-gradient(
+        135deg,
+        var(--accent-line, rgb(255 107 26 / 38%)),
+        var(--line) 60%
+      )
+      border-box;
+}
+
+.admin-section--ai::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 20px;
+  width: 64px;
+  height: 2px;
+  background: var(--accent);
+}
+
+/* "Draft only" — the badge that states the rule the assistant lives by. */
+.ai-badge {
+  display: inline-flex;
+  align-items: center;
+  min-height: 26px;
+  padding: 0 12px;
+  border: 1px solid var(--accent);
+  border-radius: 999px;
+  background: var(--accent-dim);
+  color: var(--accent);
+  font-family: var(--font-m);
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+/* The status line under the prompt. Three states, three colours. */
+.admin-help--ok {
+  color: var(--ok);
+}
+
+.admin-help--warn {
+  color: var(--warn);
+}
+
+.admin-help--error {
+  color: var(--danger);
+}
+
+/* The "it did the maths" panel — the totals before and after the draft. */
+.ai-math {
+  margin-top: 18px;
+  padding: 16px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: var(--bg-2);
+}
+
+.ai-math[hidden] {
+  display: none;
+}
+
+.ai-math__title {
+  margin-bottom: 12px;
+  color: var(--muted);
+  font-family: var(--font-m);
+  font-size: 0.7rem;
+  font-weight: 500;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.ai-math__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 1px;
+  margin: 0;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: var(--line);
+}
+
+.ai-math__row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 12px;
+  background: var(--card);
+}
+
+.ai-math__row dt {
+  color: var(--muted);
+  font-size: 0.8rem;
+}
+
+.ai-math__row dd {
+  margin: 0;
+  font-size: 0.85rem;
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+}
+/* The AI panel's buttons. The rule sits ABOVE the .btn:disabled rules
+   below, because a more specific rule must never come after a less
+   specific one that it overrides. */
+.publish-card .btn {
+  font-size: 0.85rem;
+}
+
+/* The button is disabled while the request is in flight. */
+.btn:disabled {
+  opacity: 55%;
+  cursor: progress;
+  transform: none;
+}
+
+.btn:disabled:hover {
+  transform: none;
+  box-shadow: none;
+}
+
 /* --- Admin shell ---------------------------------------------------------- */
 
 .admin-header {
@@ -389,6 +523,15 @@ code {
   color: var(--warn);
 }
 
+/* An announced match that has not been played. It borrows the accent so
+   it reads as "upcoming" rather than as a missing value. */
+.row__badge--scheduled {
+  border-color: rgb(255 107 26 / 45%);
+  color: var(--accent);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
 .row__fee {
   letter-spacing: 0.02em;
 }
@@ -438,10 +581,6 @@ code {
   margin-top: 14px;
 }
 
-.publish-card .btn {
-  font-size: 0.85rem;
-}
-
 /* --- Forms ---------------------------------------------------------------- */
 
 .field {
@@ -478,16 +617,8 @@ code {
   resize: vertical;
 }
 
-.field--wide {
-  width: 100%;
-}
-
-.field-row {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 14px;
-}
-
+/* The sample-record toggle. It is a label, not a .field, so it keeps its
+   own compact control size. */
 .check {
   display: flex;
   gap: 10px;
@@ -503,6 +634,27 @@ code {
   width: 18px;
   height: 18px;
   accent-color: var(--accent);
+}
+
+/* A field that is switched off because the match has not been played
+   yet. It stays readable — it is not hidden — but it is clearly inert. */
+.field input:disabled,
+.field select:disabled,
+.field textarea:disabled {
+  opacity: 45%;
+  cursor: not-allowed;
+  background: var(--bg);
+  border-color: var(--line);
+}
+
+.field--wide {
+  width: 100%;
+}
+
+.field-row {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
 }
 
 /* The focus ring comes last so it wins over the base field rule
@@ -544,6 +696,82 @@ code {
   margin-top: 22px;
   padding-top: 18px;
   border-top: 1px solid var(--line);
+}
+
+/* --- Rounds builder ------------------------------------------------------ */
+
+.rounds-builder {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.rounds-select {
+  min-height: 44px;
+  padding: 0 12px;
+  border: 1.5px solid var(--line-2);
+  border-radius: var(--radius-sm);
+  background: var(--bg-2);
+  color: var(--fg);
+  font-family: inherit;
+  font-size: 0.9rem;
+}
+
+.rounds-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.round-chip-admin {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 36px;
+  padding: 4px 6px 4px 12px;
+  border: 1px solid var(--line-2);
+  border-radius: 999px;
+  background: var(--card-2);
+  font-family: var(--font-m);
+  font-size: 0.8rem;
+}
+
+.round-chip-admin[data-side="nf"] {
+  border-color: rgb(255 107 26 / 45%);
+  background: var(--accent-dim);
+  color: var(--accent);
+}
+
+.round-chip-admin[data-side="opp"] {
+  color: var(--fg-2);
+}
+
+.round-chip-admin__num {
+  opacity: 70%;
+}
+
+.round-chip-admin__team {
+  font-weight: 700;
+}
+
+.round-chip-admin__remove {
+  display: inline-grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--muted);
+  font-size: 1rem;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.round-chip-admin__remove:hover {
+  background: var(--danger-dim);
+  color: var(--danger);
 }
 
 /* --- Responsive ----------------------------------------------------------- */

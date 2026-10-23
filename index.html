@@ -6,27 +6,29 @@
       name="viewport"
       content="width=device-width, initial-scale=1.0, viewport-fit=cover"
     />
-    <title>NightForge — Free Fire MAX Match Archive | Tournament History</title>
+    <title>
+      TEAM QUANTUM GAMING — Free Fire MAX Match Archive | Tournament History
+    </title>
     <meta
       name="description"
-      content="Complete Free Fire MAX match history for NightForge — every Clash Squad, Battle Royale and Lone Wolf tournament and scrim, with dates, scores, entry fees and prize money. Delhi, India."
+      content="Complete Free Fire MAX match history for TEAM QUANTUM GAMING — every Clash Squad, Battle Royale and Lone Wolf tournament and scrim, with dates, scores, entry fees and prize money. Delhi, India."
     />
     <meta name="theme-color" content="#0a0a0f" />
-    <meta name="author" content="NightForge" />
+    <meta name="author" content="TEAM QUANTUM GAMING" />
     <link
       rel="canonical"
       href="https://nightforgeio.github.io/match-archive/"
     />
 
     <meta property="og:type" content="website" />
-    <meta property="og:site_name" content="NightForge" />
+    <meta property="og:site_name" content="TEAM QUANTUM GAMING" />
     <meta
       property="og:title"
-      content="NightForge — Free Fire MAX Match Archive"
+      content="TEAM QUANTUM GAMING — Free Fire MAX Match Archive"
     />
     <meta
       property="og:description"
-      content="Every match, every entry fee, every prize. The complete Free Fire MAX tournament and scrim record."
+      content="Every match, every entry fee, every prize. The complete Free Fire MAX tournament and scrim record for TEAM QUANTUM GAMING."
     />
     <meta
       property="og:url"
@@ -37,10 +39,10 @@
       content="https://nightforgeio.github.io/match-archive/assets/og-image.png"
     />
     <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:title" content="NightForge — Match Archive" />
+    <meta name="twitter:title" content="TEAM QUANTUM GAMING — Match Archive" />
     <meta
       name="twitter:description"
-      content="Every match, every entry fee, every prize. The complete Free Fire MAX tournament and scrim record."
+      content="Every match, every entry fee, every prize. The complete Free Fire MAX tournament and scrim record for TEAM QUANTUM GAMING."
     />
     <meta
       name="twitter:image"
@@ -104,6 +106,7 @@
           <a class="nav__link" href="#archive" data-i18n="navArchive"
             >Archive</a
           >
+          <a class="nav__link" href="#form" data-i18n="navForm">Form</a>
           <a class="nav__link" href="#stats" data-i18n="navStats">Stats</a>
           <a class="nav__link" href="#team" data-i18n="navTeam">Team</a>
           <a class="nav__link" href="#contact" data-i18n="navContact"
@@ -240,6 +243,18 @@
         </div>
       </section>
 
+      <!-- ================= NEXT MATCH ================= -->
+      <!-- The fixture board. It is rendered from the data, and it is
+           hidden entirely when no match is scheduled — the section never
+           promises something the archive does not have. -->
+      <section class="section section--fixture" id="next-match" hidden>
+        <div class="wrap">
+          <span class="kicker rv" data-i18n="fixtureKicker">Next match</span>
+          <h2 class="h-section rv" data-i18n="fixtureTitle">Up next</h2>
+          <div class="fixture rv" id="fixture"></div>
+        </div>
+      </section>
+
       <!-- ================= ARCHIVE ================= -->
       <section class="section" id="archive">
         <div class="wrap">
@@ -361,6 +376,82 @@
         </div>
       </section>
 
+      <!-- ================= FORM / STREAKS ================= -->
+      <!-- The shape of the record: the run that is live right now, the
+               longest runs the archive holds, and the last five results.
+               Every number here comes from the played matches only — a
+               scheduled fixture is an announcement, not a result. -->
+      <section class="section section--streaks" id="form">
+        <div class="wrap">
+          <span class="kicker rv" data-i18n="streakKicker">Form</span>
+          <h2 class="h-section rv" data-i18n="streakTitle">
+            The run behind the record
+          </h2>
+          <p class="lead rv" data-i18n="streakSub">
+            Consecutive results across the archive.
+          </p>
+
+          <div class="streaks rv" id="streakGrid"></div>
+          <div class="streak-form rv" id="streakForm"></div>
+        </div>
+      </section>
+
+      <!-- ================= HEAD TO HEAD ================= -->
+      <!-- One row per opponent, with the record against them. A team we
+               have never played is not listed, so the board only ever
+               contains real matchups. -->
+      <section class="section" id="head-to-head">
+        <div class="wrap">
+          <span class="kicker rv" data-i18n="h2hKicker">Head to head</span>
+          <h2 class="h-section rv" data-i18n="h2hTitle">
+            Every opponent we have faced
+          </h2>
+          <p class="lead rv" data-i18n="h2hSub">
+            The record against each team we have played.
+          </p>
+
+          <div class="h2h rv" id="h2hList"></div>
+          <div class="state state--inline" id="h2hEmpty" hidden>
+            <h3 class="state__title" data-i18n="h2hEmpty">
+              No opponent has been recorded yet.
+            </h3>
+            <p class="state__body" data-i18n="h2hEmptyNote">
+              An opponent is only listed once a match names one.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <!-- ================= PLAYER ANALYSIS ================= -->
+      <!-- Each player's own record, counted from the lineups saved with
+               the matches they played in. When the archive records no
+               lineup, the section says so — it never shows a zero that
+               would read like a loss. -->
+      <section class="section" id="players">
+        <div class="wrap">
+          <span class="kicker rv" data-i18n="playersKicker">
+            Player analysis
+          </span>
+          <h2 class="h-section rv" data-i18n="playersTitle">
+            The squad's own numbers
+          </h2>
+          <p class="lead rv" data-i18n="playersSub">
+            Each player's own record.
+          </p>
+
+          <div class="player-analysis rv" id="playerStats"></div>
+          <div class="state state--inline" id="playerEmpty" hidden>
+            <h3 class="state__title" data-i18n="playerNoRecord">
+              No per-player record yet
+            </h3>
+            <p class="state__body" data-i18n="playerNoRecordNote">
+              The archive does not record a lineup for the completed matches
+              yet.
+            </p>
+          </div>
+        </div>
+      </section>
+
       <!-- ================= STATS ================= -->
       <section class="section" id="stats">
         <div class="wrap">
@@ -437,6 +528,16 @@
                 <a class="fact__value" id="factYoutube" href="#">—</a>
               </div>
             </div>
+          </div>
+
+          <div class="roster-block rv">
+            <h3 class="roster-block__title" data-i18n="rosterTitle">
+              The lineup
+            </h3>
+            <p class="roster-block__sub" data-i18n="rosterSub">
+              Four slots on the floor. These are the players behind the record.
+            </p>
+            <ul class="roster" id="rosterList"></ul>
           </div>
         </div>
       </section>

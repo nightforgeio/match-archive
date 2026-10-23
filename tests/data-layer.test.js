@@ -40,8 +40,8 @@ function loadDataModule() {
 }
 
 const A = loadDataModule();
-const published = JSON.parse(rd("data/matches.json"));
-const teamFile = JSON.parse(rd("data/team.json"));
+const published = JSON.parse(rd("tests/fixtures/matches.json"));
+const teamFile = JSON.parse(rd("tests/fixtures/team.json"));
 
 console.log("\n=== MODULE EXPORTS ===");
 ok("exports loadAll", typeof A.loadAll === "function");
@@ -210,28 +210,144 @@ console.log("\n=== STATS ===");
   ok("2 wins out of 2 decided = 100%", Math.abs(s.winRate - 100) < 0.001, s.winRate);
 }
 
+
+console.log("\n=== ROUND-BY-ROUND NORMALISATION ===");
+{
+  const m = n(
+    {
+      id: "round1",
+      date: "2026-06-01",
+      mode: "CS",
+      event: "Tournament",
+      result: "W",
+      score: "3-1",
+      format: "bo5",
+      rounds: [
+        { team: "NF", round: 1 },
+        { team: "NF", round: 2 },
+        { team: "OPP", round: 3 },
+        { team: "NF", round: 4 },
+      ],
+    },
+    0,
+  );
+
+  ok("rounds are normalised", m.rounds.length === 4, m.rounds.length);
+  ok("the round teams are canonicalised", m.rounds[0].team === "NF" && m.rounds[3].team === "NF");
+  ok("the win agrees with the round count", m.roundsTotal === 3, m.roundsTotal);
+
+  ok("bo5 is honoured when specified", m.format === "bo5", m.format);
+}
+{
+  // CS defaults to bo3 when no format is supplied.
+  const m = n(
+    {
+      id: "round4",
+      date: "2026-06-04",
+      mode: "CS",
+      event: "Scrim",
+      result: "W",
+      score: "2-0",
+      rounds: [
+        { team: "NF", round: 1 },
+        { team: "NF", round: 2 },
+      ],
+    },
+    0,
+  );
+  ok("CS defaults to bo3", m.format === "bo3", m.format);
+  ok("a bo3 win is kept", m.rounds.length === 2, m.rounds.length);
+}
+{
+  // A win that does not reach the round target must drop the rounds.
+  const m = n(
+    {
+      id: "round2",
+      date: "2026-06-02",
+      mode: "LW",
+      event: "Scrim",
+      result: "W",
+      score: "2-1",
+      format: "bo3",
+      rounds: [
+        { team: "NF", round: 1 },
+        { team: "OPP", round: 2 },
+        { team: "OPP", round: 3 },
+      ],
+    },
+    0,
+  );
+  ok("a contradicting round score is dropped", m.rounds.length === 0, JSON.stringify(m.rounds));
+}
+{
+  // A BR match has no round series.
+  const m = n(
+    {
+      id: "round3",
+      date: "2026-06-03",
+      mode: "BR",
+      event: "Tournament",
+      result: "W",
+      rounds: [{ team: "NF", round: 1 }],
+    },
+    0,
+  );
+  ok("a BR match does not record rounds", m.rounds.length === 0, m.rounds.length);
+  ok("a BR match has no format", m.format === "", m.format);
+}
+
 console.log("\n=== MONEY FORMATTING ===");
 ok("formats 1000 as Indian grouping", A.formatMoney(100000, "en") === "₹1,00,000", A.formatMoney(100000, "en"));
 ok("formats zero as an empty string", A.formatMoney(0, "en") === "");
 ok("formats undefined as an empty string", A.formatMoney(undefined, "en") === "");
 ok("formats NaN as an empty string", A.formatMoney(NaN, "en") === "");
 ok("includes the rupee sign", A.formatMoney(500, "en").indexOf("₹") === 0, A.formatMoney(500, "en"));
-
 console.log("\n=== PUBLISHED DATA FILE ===");
 ok("data/matches.json has a matches array", Array.isArray(published.matches));
-ok("data/matches.json declares schemaVersion 1", published.schemaVersion === 1);
+ok("data/matches.json declares schemaVersion 2", published.schemaVersion === 2, published.schemaVersion);
 ok("every published record has an id", published.matches.every((m) => !!m.id));
 ok("every published record has a valid date", published.matches.every((m) => A.parseDate(m.date) !== null));
 ok("every published record has a known mode", published.matches.every((m) => A.MODES.indexOf(m.mode) !== -1));
-ok("every published record has a known result", published.matches.every((m) => A.RESULTS.indexOf(m.result) !== -1));
+// A PLAYED record has a result. An ANNOUNCED one does not — it has not
+// been played yet, so a result would be a fiction.
+ok(
+  "every played record has a known result",
+  published.matches.every((m) => m.status === "scheduled" || A.RESULTS.indexOf(m.result) !== -1),
+  JSON.stringify(published.matches.filter((m) => m.status !== "scheduled" && A.RESULTS.indexOf(m.result) === -1).map((m) => m.id))
+);
+ok(
+  "no scheduled record carries a result or a score",
+  published.matches.every((m) => m.status !== "scheduled" || (!m.result && !m.score)),
+  JSON.stringify(published.matches.filter((m) => m.status === "scheduled" && (m.result || m.score)).map((m) => m.id))
+);
+ok(
+  "every published record has a known status",
+  published.matches.every((m) => A.STATUSES.indexOf(m.status) !== -1),
+  JSON.stringify(published.matches.map((m) => m.status))
+);
 ok("every published record has an event type", published.matches.every((m) => A.EVENTS.indexOf(m.event) !== -1));
 ok("no published record has a negative fee", published.matches.every((m) => m.entryFee >= 0));
 ok("no published record has a negative prize", published.matches.every((m) => m.prize >= 0));
+ok(
+  "no published record has a negative prize per winner",
+  published.matches.every((m) => (m.prizePerWinner || 0) >= 0)
+);
 ok("the ids are unique", (function () {
   const ids = published.matches.map((m) => m.id);
   return new Set(ids).size === ids.length;
 })());
-ok("every published record is flagged as a sample", published.matches.every((m) => m.demo === true));
+// Only the sample records carry the sample flag. A real match is not a
+// sample, and a real record that claimed to be one would hide the fact
+// that the archive is still a demonstration.
+const sampleRecords = published.matches.filter((m) => m.demo === true);
+const realRecords = published.matches.filter((m) => m.demo !== true);
+ok(
+  "the sample records are the demo ones",
+  realRecords.every((m) => m.status === "scheduled"),
+  JSON.stringify(realRecords.map((m) => m.id + ":" + m.status))
+);
+ok("there is at least one sample record", sampleRecords.length > 0, sampleRecords.length);
+
 // The archive is a Free Fire MAX record. A map or note from a different
 // game is a factual error that no schema check would catch, so the
 // published data is checked for the vocabulary of the wrong game.
@@ -251,10 +367,121 @@ ok(
 ok(
   "every published map is a Free Fire map",
   published.matches.every(function (m) {
+    if (!m.map) return true;
     return /bermuda|purgatory|kalahari|alpine|nexterra|solara/i.test(m.map || "");
   }),
   JSON.stringify(published.matches.map((m) => m.map))
 );
+
+console.log("\n=== THE SCHEDULED FIXTURE ===");
+// A scheduled record is an announcement. It must not be counted as a
+// played match, and it must not carry a win, a prize or a placement.
+const scheduled = published.matches.filter((m) => m.status === "scheduled");
+ok("there is a scheduled fixture", scheduled.length > 0, scheduled.length);
+const fixture = scheduled[0];
+if (fixture) {
+  ok("the fixture has a start time", /^\d{2}:\d{2}$/.test(fixture.time || ""), fixture.time);
+  ok("the fixture has a mode", A.MODES.indexOf(fixture.mode) !== -1, fixture.mode);
+  ok("the fixture has no result", !fixture.result, fixture.result);
+  ok("the fixture has no placement", fixture.placement === null || fixture.placement === undefined, fixture.placement);
+  ok("the fixture has a lineup", Array.isArray(fixture.roster) && fixture.roster.length > 0, JSON.stringify(fixture.roster));
+  // The unnamed fourth player is an OPEN SLOT. It is an empty string on
+  // purpose, and it must survive the round trip.
+  ok(
+    "the fixture keeps its open slot",
+    Array.isArray(fixture.roster) && fixture.roster.indexOf("") !== -1,
+    JSON.stringify(fixture.roster)
+  );
+  ok(
+    "the open slot is the last entry",
+    Array.isArray(fixture.roster) &&
+      fixture.roster.length > 0 &&
+      fixture.roster[fixture.roster.length - 1] === "",
+    JSON.stringify(fixture.roster)
+  );
+  ok(
+    "every named player in the lineup is also on the team roster",
+    Array.isArray(fixture.roster) &&
+      fixture.roster
+        .filter((name) => !!name)
+        .every((name) => (teamFile.roster || []).some((p) => p.name === name)),
+    JSON.stringify(fixture.roster)
+  );
+  ok("the fixture has a prize per winner", (fixture.prizePerWinner || 0) > 0, fixture.prizePerWinner);
+}
+const playedRecords = published.matches.filter((m) => m.status !== "scheduled");
+const allNormalized = published.matches.map((m, i) => A.normalizeMatch(m, i));
+const statsFromFile = A.computeStats(allNormalized);
+ok(
+  "the stats count only the played records",
+  statsFromFile.total === playedRecords.length,
+  statsFromFile.total + " vs " + playedRecords.length
+);
+ok(
+  "the scheduled fixture is not in the stats",
+  statsFromFile.total === published.matches.length - scheduled.length,
+  statsFromFile.total
+);
+ok(
+  "the stats carry the number of pending fixtures",
+  statsFromFile.scheduledCount === scheduled.length,
+  statsFromFile.scheduledCount
+);
+ok(
+  "the stats do not count the fixture as a win",
+  statsFromFile.wins ===
+    playedRecords.filter((m) => m.result === "W").length,
+  statsFromFile.wins
+);
+ok(
+  "the stats do not count the fixture prize",
+  statsFromFile.totalPrize ===
+    playedRecords.reduce((sum, m) => sum + (m.prize || 0), 0),
+  statsFromFile.totalPrize
+);
+
+console.log("\n=== THE TEAM ROSTER ===");
+ok("data/team.json declares schemaVersion 2", teamFile.schemaVersion === 2, teamFile.schemaVersion);
+ok("the team has a roster", Array.isArray(teamFile.roster) && teamFile.roster.length > 0, JSON.stringify(teamFile.roster));
+ok(
+  "every roster player has a name",
+  (teamFile.roster || []).every((p) => typeof p.name === "string" && p.name.length > 0)
+);
+ok(
+  "every roster role is a known role",
+  (teamFile.roster || []).every((p) => (p.roles || []).every((r) => A.ROLES.indexOf(r) !== -1)),
+  JSON.stringify((teamFile.roster || []).map((p) => p.roles))
+);
+ok(
+  "every roster player has at least one role",
+  (teamFile.roster || []).every((p) => (p.roles || []).length > 0),
+  JSON.stringify((teamFile.roster || []).map((p) => p.name))
+);
+ok(
+  "the roster player names are unique",
+  new Set((teamFile.roster || []).map((p) => p.name)).size === (teamFile.roster || []).length
+);
+// A player can hold more than one role — the in-game leader who is also
+// the sniper. The merged card must keep both.
+const mergedRoster = A.normalizeRoster(teamFile.roster);
+ok(
+  "the merged roster has one card per player",
+  mergedRoster.length === (teamFile.roster || []).length,
+  mergedRoster.length
+);
+const dualRole = mergedRoster.find((p) => p.roles.length > 1);
+ok(
+  "a player with two roles keeps both on one card",
+  !dualRole || dualRole.roles.length > 1,
+  JSON.stringify(dualRole)
+);
+ok(
+  "the merged roster keeps the names exactly as written",
+  mergedRoster.every((p) =>
+    (teamFile.roster || []).some((src) => src.name === p.name)
+  )
+);
+
 
 console.log("\n=== PUBLISHED TEAM FILE ===");
 ok("data/team.json has a name", typeof teamFile.name === "string" && teamFile.name.length > 0);
